@@ -15,8 +15,41 @@
 }
 
 .iconfine-toolbar select,
-.iconfine-toolbar input {
+.iconfine-search-wrap {
   width: 100%;
+}
+
+.iconfine-search-wrap {
+  position: relative;
+}
+
+.iconfine-search-wrap input {
+  width: 100%;
+}
+
+.iconfine-search-example {
+  position: absolute;
+  top: 50%;
+  right: 34px;
+  left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  pointer-events: none;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+.iconfine-search-example .iconfine {
+  flex: 0 0 auto;
+  font-size: 16px;
+}
+
+.iconfine-search-example.is-hidden {
+  display: none;
 }
 
 .iconfine-status {

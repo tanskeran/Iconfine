@@ -139,15 +139,27 @@ class IconPickerModal extends Modal {
     }
     packSelect.value = this.activePack.id;
 
-    const searchInput = toolbar.createEl("input", {
+    const searchWrap = toolbar.createDiv({ cls: "iconfine-search-wrap" });
+    const searchInput = searchWrap.createEl("input", {
       type: "search",
-      placeholder: "Search icon ID, for example book or LiBookOpen",
       attr: {
         "aria-label": "Search icons",
         autocomplete: "off",
         spellcheck: "false",
       },
     });
+    const searchExample = searchWrap.createDiv({ cls: "iconfine-search-example" });
+    searchExample.createSpan({ text: "Search icon ID, for example book for " });
+    searchExample.createEl("i", {
+      cls: "iconfine lucide-font icon-book",
+      attr: { "aria-label": "book" },
+    });
+
+    const updateSearchExample = () => {
+      searchExample.toggleClass("is-hidden", searchInput.value.length > 0);
+    };
+    searchInput.addEventListener("input", updateSearchExample);
+    updateSearchExample();
 
     this.statusEl = this.contentEl.createDiv({ cls: "iconfine-status" });
     this.resultsEl = this.contentEl.createDiv({ cls: "iconfine-results" });
