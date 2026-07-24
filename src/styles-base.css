@@ -1,9 +1,3 @@
-@font-face {
-  font-family: "Iconfine Lucide";
-  src: url("__ICONFINE_FONT_DATA__") format("woff2");
-  font-display: block;
-}
-
 .iconfine {
   display: inline-block;
   color: inherit;

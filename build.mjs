@@ -5,8 +5,6 @@ import builtins from "builtin-modules";
 
 const watch = process.argv.includes("--watch");
 const sourceCss = await readFile("lucide.css", "utf8");
-const fontBuffer = await readFile("lucide.woff2");
-const fontDataUrl = `data:font/woff2;base64,${fontBuffer.toString("base64")}`;
 const mappings = new Map();
 const mappingPattern = /\.icon-([a-z0-9-]+)::before\s*\{\s*content:\s*"\\([a-f0-9]+)";\s*\}/gi;
 
@@ -25,11 +23,7 @@ const icons = [...mappings.entries()]
 const generatedTs = `export interface IconDefinition {\n  id: string;\n  codepoint: string;\n}\n\nexport const LUCIDE_ICONS: IconDefinition[] = ${JSON.stringify(icons, null, 2)};\n`;
 await writeFile("src/icons.generated.ts", generatedTs, "utf8");
 
-const baseCssTemplate = await readFile("src/styles-base.css", "utf8");
-const baseCss = baseCssTemplate.replace("__ICONFINE_FONT_DATA__", fontDataUrl);
-if (baseCss === baseCssTemplate) {
-  throw new Error("Font data placeholder was not found in styles-base.css");
-}
+const baseCss = await readFile("src/styles-base.css", "utf8");
 const generatedCss = icons
   .map(({ id, codepoint }) => `.iconfine.if-lucide.if-icon-${id}::before { content: "\\${codepoint}"; }`)
   .join("\n");

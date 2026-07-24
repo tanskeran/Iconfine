@@ -4,5 +4,8 @@ highlightr-plugin/
 chat-export-*.md
 font-test.html
 font-test*.png
+fontface-*.html
+fontface-*.png
+generate-fontface-test.mjs
 test-server.mjs
 *.log

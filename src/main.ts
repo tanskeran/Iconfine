@@ -6,12 +6,18 @@ import {
   Plugin,
   PluginSettingTab,
   Setting,
+  normalizePath,
 } from "obsidian";
 import { IconDefinition, LUCIDE_ICONS } from "./icons.generated";
 
 interface IconfineSettings {
   defaultPack: "lucide";
   insertTrailingSpace: boolean;
+}
+
+interface MutableFontFaceSet extends FontFaceSet {
+  add(font: FontFace): MutableFontFaceSet;
+  delete(font: FontFace): boolean;
 }
 
 const DEFAULT_SETTINGS: IconfineSettings = {
@@ -234,9 +240,11 @@ class IconfineSettingTab extends PluginSettingTab {
 
 export default class IconfinePlugin extends Plugin {
   settings: IconfineSettings = DEFAULT_SETTINGS;
+  private lucideFont: FontFace | null = null;
 
   async onload(): Promise<void> {
     await this.loadSettings();
+    await this.loadLucideFont();
 
     this.addCommand({
       id: "insert-icon",
@@ -247,6 +255,36 @@ export default class IconfinePlugin extends Plugin {
     });
 
     this.addSettingTab(new IconfineSettingTab(this.app, this));
+  }
+
+  onunload(): void {
+    if (this.lucideFont) {
+      (document.fonts as MutableFontFaceSet).delete(this.lucideFont);
+      this.lucideFont = null;
+    }
+  }
+
+  private async loadLucideFont(): Promise<void> {
+    if (!this.manifest.dir) {
+      throw new Error("Iconfine plugin directory is unavailable");
+    }
+
+    const fontPath = normalizePath(`${this.manifest.dir}/lucide.woff2`);
+    const fontData = await this.app.vault.adapter.readBinary(fontPath);
+    const font = new FontFace("Iconfine Lucide", fontData, {
+      style: "normal",
+      weight: "400",
+    });
+
+    await font.load();
+    (document.fonts as MutableFontFaceSet).add(font);
+
+    if (!document.fonts.check('16px "Iconfine Lucide"')) {
+      (document.fonts as MutableFontFaceSet).delete(font);
+      throw new Error(`Iconfine could not register the Lucide font from ${fontPath}`);
+    }
+
+    this.lucideFont = font;
   }
 
   private async loadSettings(): Promise<void> {
