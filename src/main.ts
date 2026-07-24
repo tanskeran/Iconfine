@@ -283,9 +283,9 @@ class IconfineSettingTab extends PluginSettingTab {
       .setDesc("Choose where one space is inserted around icon HTML.")
       .addDropdown((dropdown) => {
         dropdown
-          .addOption("before", "只加前面")
-          .addOption("after", "只加后面")
-          .addOption("both", "前后都加一空格")
+          .addOption("before", "Before icon")
+          .addOption("after", "After icon")
+          .addOption("both", "Before and after")
           .setValue(this.plugin.settings.spacePlacement)
           .onChange(async (value) => {
             this.plugin.settings.spacePlacement = value as SpacePlacement;
@@ -325,11 +325,26 @@ export default class IconfinePlugin extends Plugin {
       id: "insert-icon",
       name: "Insert icon",
       editorCallback: (editor) => {
-        new IconPickerModal(this.app, editor, this.settings).open();
+        this.openIconPicker(editor);
       },
     });
 
+    this.registerEvent(
+      this.app.workspace.on("editor-menu", (menu, editor) => {
+        menu.addItem((item) => {
+          item
+            .setTitle("Iconfine")
+            .setIcon("shapes")
+            .onClick(() => this.openIconPicker(editor));
+        });
+      }),
+    );
+
     this.addSettingTab(new IconfineSettingTab(this.app, this));
+  }
+
+  private openIconPicker(editor: Editor): void {
+    new IconPickerModal(this.app, editor, this.settings).open();
   }
 
   onunload(): void {
