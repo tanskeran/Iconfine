@@ -16,6 +16,11 @@
   font-family: "Iconfine Lucide" !important;
 }
 
+.iconfine.if-tabler,
+.iconfine.if-tabler::before {
+  font-family: "Iconfine Tabler" !important;
+}
+
 .iconfine-modal {
   width: min(720px, calc(100vw - 32px));
 }

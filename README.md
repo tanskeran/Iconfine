@@ -4,7 +4,9 @@ Iconfine searches and inserts static icon-font HTML into Obsidian notes. Icons i
 
 ## Initial feature set
 
-- Bundled Lucide font and generated icon index
+- Bundled Lucide and Tabler fonts with generated icon indexes
+- Choose the default icon pack from the settings list
+- Switch icon packs directly in the icon picker
 - Search and preview up to 50 matching icons
 - Mouse and keyboard selection
 - Static namespaced HTML output
@@ -14,6 +16,7 @@ Inserted markup:
 
 ```html
 <i class="iconfine if-lucide if-icon-book"></i>
+<i class="iconfine if-tabler if-icon-book"></i>
 ```
 
 ## Build
@@ -29,5 +32,6 @@ Copy these files into `<vault>/.obsidian/plugins/iconfine/`:
 - `manifest.json`
 - `styles.css`
 - `lucide.woff2`
+- `tabler-icons.woff2`
 
 Enable Iconfine in Obsidian, then run `Iconfine: Insert icon` from the command palette.

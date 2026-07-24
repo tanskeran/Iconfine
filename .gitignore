@@ -1,6 +1,11 @@
 node_modules/
 release/
+temp/
 highlightr-plugin/
+tabler-icon/tabler-icons-200.css
+tabler-icon/tabler-icons-200.woff2
+tabler-icon/tabler-icons-300.css
+tabler-icon/tabler-icons-300.woff2
 chat-export-*.md
 font-test.html
 font-test*.png

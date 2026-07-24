@@ -1,33 +1,56 @@
 import esbuild from "esbuild";
-import { readFile, writeFile } from "node:fs/promises";
+import { copyFile, readFile, writeFile } from "node:fs/promises";
 import process from "node:process";
 import builtins from "builtin-modules";
 
 const watch = process.argv.includes("--watch");
-const sourceCss = await readFile("lucide.css", "utf8");
-const mappings = new Map();
-const mappingPattern = /\.icon-([a-z0-9-]+)::before\s*\{\s*content:\s*"\\([a-f0-9]+)";\s*\}/gi;
 
-for (const match of sourceCss.matchAll(mappingPattern)) {
-  mappings.set(match[1], match[2]);
+function parseMappings(css, pattern, packName) {
+  const mappings = new Map();
+
+  for (const match of css.matchAll(pattern)) {
+    mappings.set(match[1], match[2]);
+  }
+
+  if (mappings.size === 0) {
+    throw new Error(`No ${packName} icon mappings were found`);
+  }
+
+  return [...mappings.entries()]
+    .map(([id, codepoint]) => ({ id, codepoint }))
+    .sort((a, b) => a.id.localeCompare(b.id));
 }
 
-if (mappings.size === 0) {
-  throw new Error("No Lucide icon mappings were found in lucide.css");
-}
+const lucideCss = await readFile("lucide.css", "utf8");
+const tablerCss = await readFile("tabler-icon/tabler-icons.css", "utf8");
 
-const icons = [...mappings.entries()]
-  .map(([id, codepoint]) => ({ id, codepoint }))
-  .sort((a, b) => a.id.localeCompare(b.id));
+const lucideIcons = parseMappings(
+  lucideCss,
+  /\.icon-([a-z0-9-]+)::before\s*\{\s*content:\s*"\\([a-f0-9]+)";\s*\}/gi,
+  "Lucide",
+);
+const tablerIcons = parseMappings(
+  tablerCss,
+  /\.ti-([a-z0-9-]+):before\s*\{\s*content:\s*"\\([a-f0-9]+)";\s*\}/gi,
+  "Tabler",
+);
 
-const generatedTs = `export interface IconDefinition {\n  id: string;\n  codepoint: string;\n}\n\nexport const LUCIDE_ICONS: IconDefinition[] = ${JSON.stringify(icons, null, 2)};\n`;
+const generatedTs = `export interface IconDefinition {\n  id: string;\n  codepoint: string;\n}\n\nexport const LUCIDE_ICONS: IconDefinition[] = ${JSON.stringify(lucideIcons, null, 2)};\n\nexport const TABLER_ICONS: IconDefinition[] = ${JSON.stringify(tablerIcons, null, 2)};\n`;
 await writeFile("src/icons.generated.ts", generatedTs, "utf8");
 
 const baseCss = await readFile("src/styles-base.css", "utf8");
-const generatedCss = icons
+const lucideMappings = lucideIcons
   .map(({ id, codepoint }) => `.iconfine.if-lucide.if-icon-${id}::before { content: "\\${codepoint}"; }`)
   .join("\n");
-await writeFile("styles.css", `${baseCss.trim()}\n\n${generatedCss}\n`, "utf8");
+const tablerMappings = tablerIcons
+  .map(({ id, codepoint }) => `.iconfine.if-tabler.if-icon-${id}::before { content: "\\${codepoint}"; }`)
+  .join("\n");
+await writeFile(
+  "styles.css",
+  `${baseCss.trim()}\n\n${lucideMappings}\n\n${tablerMappings}\n`,
+  "utf8",
+);
+await copyFile("tabler-icon/tabler-icons.woff2", "tabler-icons.woff2");
 
 const context = await esbuild.context({
   entryPoints: ["src/main.ts"],
@@ -38,14 +61,14 @@ const context = await esbuild.context({
   logLevel: "info",
   sourcemap: "inline",
   treeShaking: true,
-  outfile: "main.js"
+  outfile: "main.js",
 });
 
 if (watch) {
   await context.watch();
-  console.log(`Iconfine: watching ${icons.length} Lucide icons`);
+  console.log(`Iconfine: watching ${lucideIcons.length} Lucide and ${tablerIcons.length} Tabler icons`);
 } else {
   await context.rebuild();
   await context.dispose();
-  console.log(`Iconfine: built ${icons.length} Lucide icons`);
+  console.log(`Iconfine: built ${lucideIcons.length} Lucide and ${tablerIcons.length} Tabler icons`);
 }
