@@ -78,6 +78,12 @@ function normalizeIconId(input: string): string {
     .toLowerCase();
 }
 
+function getIconClasses(packId: IconPackId, iconId: string): string {
+  return packId === "lucide"
+    ? `iconfine lucide-font icon-${iconId}`
+    : `iconfine tabler-font ti-${iconId}`;
+}
+
 function searchIcons(pack: IconPack, query: string): IconDefinition[] {
   const normalized = normalizeIconId(query);
 
@@ -212,7 +218,7 @@ class IconPickerModal extends Modal {
       if (!item) return;
 
       item.createEl("i", {
-        cls: `iconfine if-${this.activePack.id} if-icon-${icon.id}`,
+        cls: getIconClasses(this.activePack.id, icon.id),
       });
       item.createDiv({ cls: "iconfine-result-name", text: icon.id });
       item.addEventListener("mouseenter", () => {
@@ -241,7 +247,7 @@ class IconPickerModal extends Modal {
   private insertIcon(icon: IconDefinition): void {
     const prefix = this.settings.spacePlacement === "before" || this.settings.spacePlacement === "both" ? " " : "";
     const suffix = this.settings.spacePlacement === "after" || this.settings.spacePlacement === "both" ? " " : "";
-    const html = `${prefix}<i class="iconfine if-${this.activePack.id} if-icon-${icon.id}"></i>${suffix}`;
+    const html = `${prefix}<i class="${getIconClasses(this.activePack.id, icon.id)}"></i>${suffix}`;
     this.editor.replaceSelection(html);
     this.close();
     this.editor.focus();

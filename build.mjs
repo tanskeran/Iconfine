@@ -41,10 +41,10 @@ await writeFile("src/icons.generated.ts", generatedTs, "utf8");
 const baseCss = await readFile("src/styles-base.css", "utf8");
 const rendererBaseCss = await readFile("src/renderer-base.css", "utf8");
 const lucideMappings = lucideIcons
-  .map(({ id, codepoint }) => `.iconfine.if-lucide.if-icon-${id}::before { content: "\\${codepoint}"; }`)
+  .map(({ id, codepoint }) => `.iconfine.lucide-font.icon-${id}::before, .iconfine.if-lucide.if-icon-${id}::before { content: "\\${codepoint}"; }`)
   .join("\n");
 const tablerMappings = tablerIcons
-  .map(({ id, codepoint }) => `.iconfine.if-tabler.if-icon-${id}::before { content: "\\${codepoint}"; }`)
+  .map(({ id, codepoint }) => `.iconfine.tabler-font.ti-${id}::before, .iconfine.if-tabler.if-icon-${id}::before { content: "\\${codepoint}"; }`)
   .join("\n");
 await writeFile("styles.css", `${baseCss.trim()}\n`, "utf8");
 await writeFile(

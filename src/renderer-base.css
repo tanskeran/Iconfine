@@ -1,5 +1,5 @@
 @font-face {
-  font-family: "Iconfine Lucide";
+  font-family: "lucide";
   src: url("iconfine-lucide.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
@@ -7,7 +7,7 @@
 }
 
 @font-face {
-  font-family: "Iconfine Tabler";
+  font-family: "tabler-icons";
   src: url("iconfine-tabler.woff2") format("woff2");
   font-style: normal;
   font-weight: 400;
@@ -27,14 +27,18 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.iconfine.lucide-font,
+.iconfine.lucide-font::before,
 .iconfine.if-lucide,
 .iconfine.if-lucide::before {
-  font-family: "Iconfine Lucide" !important;
+  font-family: "lucide" !important;
 }
 
+.iconfine.tabler-font,
+.iconfine.tabler-font::before,
 .iconfine.if-tabler,
 .iconfine.if-tabler::before {
-  font-family: "Iconfine Tabler" !important;
+  font-family: "tabler-icons" !important;
 }
 
 .iconfine::before {
