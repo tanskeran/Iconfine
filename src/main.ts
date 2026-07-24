@@ -27,6 +27,11 @@ interface LegacyIconfineSettings extends Partial<IconfineSettings> {
   insertTrailingSpace?: boolean;
 }
 
+interface MutableFontFaceSet extends FontFaceSet {
+  add(font: FontFace): MutableFontFaceSet;
+  delete(font: FontFace): boolean;
+}
+
 interface CssSnippetManager {
   enabledSnippets?: Set<string>;
   requestLoadSnippets?: () => Promise<void> | void;
@@ -353,6 +358,7 @@ class IconfineSettingTab extends PluginSettingTab {
 
 export default class IconfinePlugin extends Plugin {
   settings: IconfineSettings = DEFAULT_SETTINGS;
+  private loadedFonts = new Map<IconPackId, FontFace>();
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -392,11 +398,54 @@ export default class IconfinePlugin extends Plugin {
     new IconPickerModal(this.app, editor, this).open();
   }
 
+  onunload(): void {
+    const fontSet = document.fonts as MutableFontFaceSet;
+    for (const font of this.loadedFonts.values()) {
+      fontSet.delete(font);
+    }
+    this.loadedFonts.clear();
+  }
+
+  private async reloadScreenFonts(): Promise<void> {
+    if (!this.manifest.dir) {
+      throw new Error("Iconfine plugin directory is unavailable");
+    }
+
+    const sources: Record<IconPackId, { family: string; file: string }> = {
+      lucide: { family: "Iconfine Lucide", file: "lucide.woff2" },
+      tabler: { family: "Iconfine Tabler", file: "tabler-icons.woff2" },
+    };
+    const fontSet = document.fonts as MutableFontFaceSet;
+
+    for (const packId of Object.keys(sources) as IconPackId[]) {
+      const source = sources[packId];
+      const fontPath = normalizePath(`${this.manifest.dir}/${source.file}`);
+      const fontData = await this.app.vault.adapter.readBinary(fontPath);
+      const newFont = new FontFace(source.family, fontData, {
+        style: "normal",
+        weight: "400",
+      });
+      await newFont.load();
+      fontSet.add(newFont);
+
+      if (newFont.status !== "loaded" || !document.fonts.check(`16px "${source.family}"`)) {
+        fontSet.delete(newFont);
+        throw new Error(`Iconfine could not load ${source.family}`);
+      }
+
+      const previous = this.loadedFonts.get(packId);
+      if (previous) fontSet.delete(previous);
+      this.loadedFonts.set(packId, newFont);
+    }
+  }
+
   isRendererEnabled(): boolean {
     return (this.app as AppWithCssSnippets).customCss?.enabledSnippets?.has("iconfine") ?? false;
   }
 
   async installRendererSnippet(): Promise<boolean> {
+    await this.reloadScreenFonts();
+
     if (!this.manifest.dir) {
       throw new Error("Iconfine plugin directory is unavailable");
     }
