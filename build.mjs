@@ -39,7 +39,11 @@ const generatedTs = `export interface IconDefinition {\n  id: string;\n  codepoi
 await writeFile("src/icons.generated.ts", generatedTs, "utf8");
 
 const baseCss = await readFile("src/styles-base.css", "utf8");
-const rendererBaseCss = await readFile("src/renderer-base.css", "utf8");
+const lucideFontData = (await readFile("lucide.woff2")).toString("base64");
+const tablerFontData = (await readFile("tabler-icon/tabler-icons.woff2")).toString("base64");
+const rendererBaseCss = (await readFile("src/renderer-base.css", "utf8"))
+  .replace('url("iconfine-lucide.woff2")', `url("data:font/woff2;base64,${lucideFontData}")`)
+  .replace('url("iconfine-tabler.woff2")', `url("data:font/woff2;base64,${tablerFontData}")`);
 const lucideMappings = lucideIcons
   .map(({ id, codepoint }) => `.iconfine.lucide-font.icon-${id}::before, .iconfine.if-lucide.if-icon-${id}::before { content: "\\${codepoint}"; }`)
   .join("\n");
