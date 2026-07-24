@@ -1,7 +1,6 @@
 import {
   App,
   Editor,
-  FuzzySuggestModal,
   Modal,
   Notice,
   Plugin,
@@ -244,35 +243,6 @@ class IconPickerModal extends Modal {
   }
 }
 
-class IconPackSuggestModal extends FuzzySuggestModal<IconPack> {
-  private readonly currentPack: IconPackId;
-  private readonly onChoose: (packId: IconPackId) => Promise<void>;
-
-  constructor(
-    app: App,
-    currentPack: IconPackId,
-    onChoose: (packId: IconPackId) => Promise<void>,
-  ) {
-    super(app);
-    this.currentPack = currentPack;
-    this.onChoose = onChoose;
-    this.setPlaceholder("Search icon packs...");
-  }
-
-  getItems(): IconPack[] {
-    return Object.values(ICON_PACKS);
-  }
-
-  getItemText(pack: IconPack): string {
-    const selected = pack.id === this.currentPack ? " · Selected" : "";
-    return `${pack.name} · ${pack.icons.length} icons${selected}`;
-  }
-
-  onChooseItem(pack: IconPack): void {
-    void this.onChoose(pack.id);
-  }
-}
-
 class IconfineSettingTab extends PluginSettingTab {
   private readonly plugin: IconfinePlugin;
 
@@ -287,22 +257,19 @@ class IconfineSettingTab extends PluginSettingTab {
 
     new Setting(this.containerEl)
       .setName("Default icon pack")
-      .setDesc(currentPack.name)
-      .addButton((button) => {
-        button
-          .setIcon("list")
-          .setTooltip("Choose icon pack")
-          .onClick(() => {
-            new IconPackSuggestModal(
-              this.app,
-              this.plugin.settings.defaultPack,
-              async (packId) => {
-                this.plugin.settings.defaultPack = packId;
-                await this.plugin.saveSettings(false);
-                this.display();
-                new Notice(`Default icon pack: ${ICON_PACKS[packId].name}`);
-              },
-            ).open();
+      .setDesc(`${currentPack.icons.length} icons available`)
+      .addDropdown((dropdown) => {
+        for (const pack of Object.values(ICON_PACKS)) {
+          dropdown.addOption(pack.id, pack.name);
+        }
+        dropdown
+          .setValue(this.plugin.settings.defaultPack)
+          .onChange(async (value) => {
+            const packId = value as IconPackId;
+            this.plugin.settings.defaultPack = packId;
+            await this.plugin.saveSettings(false);
+            this.display();
+            new Notice(`Default icon pack: ${ICON_PACKS[packId].name}`);
           });
       });
 
