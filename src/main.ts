@@ -20,6 +20,7 @@ type SpacePlacement = "before" | "after" | "both";
 interface IconfineSettings {
   defaultPack: IconPackId;
   spacePlacement: SpacePlacement;
+  recentIcons: Record<IconPackId, string[]>;
 }
 
 interface LegacyIconfineSettings extends Partial<IconfineSettings> {
@@ -58,6 +59,10 @@ const ICON_PACKS: Record<IconPackId, IconPack> = {
 const DEFAULT_SETTINGS: IconfineSettings = {
   defaultPack: "lucide",
   spacePlacement: "after",
+  recentIcons: {
+    lucide: [],
+    tabler: [],
+  },
 };
 
 const RESULT_LIMIT = 50;
@@ -84,11 +89,17 @@ function getIconClasses(packId: IconPackId, iconId: string): string {
     : `iconfine tabler-font ti-${iconId}`;
 }
 
-function searchIcons(pack: IconPack, query: string): IconDefinition[] {
+function searchIcons(pack: IconPack, query: string, recentIds: string[] = []): IconDefinition[] {
   const normalized = normalizeIconId(query);
 
   if (!normalized) {
-    return pack.icons.slice(0, RESULT_LIMIT);
+    const iconsById = new Map(pack.icons.map((icon) => [icon.id, icon]));
+    const recent = recentIds
+      .map((id) => iconsById.get(id))
+      .filter((icon): icon is IconDefinition => Boolean(icon));
+    const recentSet = new Set(recent.map((icon) => icon.id));
+    const remaining = pack.icons.filter((icon) => !recentSet.has(icon.id));
+    return [...recent, ...remaining].slice(0, RESULT_LIMIT);
   }
 
   const exact: IconDefinition[] = [];
@@ -110,6 +121,7 @@ function searchIcons(pack: IconPack, query: string): IconDefinition[] {
 
 class IconPickerModal extends Modal {
   private readonly editor: Editor;
+  private readonly plugin: IconfinePlugin;
   private readonly settings: IconfineSettings;
   private activePack: IconPack;
   private query = "";
@@ -118,11 +130,12 @@ class IconPickerModal extends Modal {
   private resultsEl: HTMLElement | null = null;
   private statusEl: HTMLElement | null = null;
 
-  constructor(app: App, editor: Editor, settings: IconfineSettings) {
+  constructor(app: App, editor: Editor, plugin: IconfinePlugin) {
     super(app);
     this.editor = editor;
-    this.settings = settings;
-    this.activePack = ICON_PACKS[settings.defaultPack];
+    this.plugin = plugin;
+    this.settings = plugin.settings;
+    this.activePack = ICON_PACKS[this.settings.defaultPack];
   }
 
   onOpen(): void {
@@ -203,7 +216,11 @@ class IconPickerModal extends Modal {
   private updateResults(): void {
     if (!this.resultsEl || !this.statusEl) return;
 
-    this.results = searchIcons(this.activePack, this.query);
+    this.results = searchIcons(
+      this.activePack,
+      this.query,
+      this.settings.recentIcons[this.activePack.id],
+    );
     this.selectedIndex = Math.min(this.selectedIndex, Math.max(0, this.results.length - 1));
     this.resultsEl.empty();
 
@@ -261,6 +278,7 @@ class IconPickerModal extends Modal {
     const suffix = this.settings.spacePlacement === "after" || this.settings.spacePlacement === "both" ? " " : "";
     const html = `${prefix}<i class="${getIconClasses(this.activePack.id, icon.id)}"></i>${suffix}`;
     this.editor.replaceSelection(html);
+    void this.plugin.recordRecentIcon(this.activePack.id, icon.id);
     this.close();
     this.editor.focus();
   }
@@ -371,7 +389,7 @@ export default class IconfinePlugin extends Plugin {
   }
 
   private openIconPicker(editor: Editor): void {
-    new IconPickerModal(this.app, editor, this.settings).open();
+    new IconPickerModal(this.app, editor, this).open();
   }
 
   isRendererEnabled(): boolean {
@@ -415,6 +433,15 @@ export default class IconfinePlugin extends Plugin {
     return this.isRendererEnabled();
   }
 
+  async recordRecentIcon(packId: IconPackId, iconId: string): Promise<void> {
+    const current = this.settings.recentIcons[packId] ?? [];
+    this.settings.recentIcons[packId] = [
+      iconId,
+      ...current.filter((id) => id !== iconId),
+    ].slice(0, RESULT_LIMIT);
+    await this.saveSettings(false);
+  }
+
   private async loadSettings(): Promise<void> {
     const saved = await this.loadData() as LegacyIconfineSettings | null;
     const defaultPack = saved?.defaultPack && ICON_PACKS[saved.defaultPack]
@@ -424,7 +451,11 @@ export default class IconfinePlugin extends Plugin {
       ? saved.spacePlacement
       : DEFAULT_SETTINGS.spacePlacement;
 
-    this.settings = { defaultPack, spacePlacement };
+    const recentIcons = {
+      lucide: Array.isArray(saved?.recentIcons?.lucide) ? saved.recentIcons.lucide : [],
+      tabler: Array.isArray(saved?.recentIcons?.tabler) ? saved.recentIcons.tabler : [],
+    };
+    this.settings = { defaultPack, spacePlacement, recentIcons };
   }
 
   async saveSettings(showNotice = true): Promise<void> {
