@@ -426,12 +426,10 @@ export default class IconfinePlugin extends Plugin {
         weight: "400",
       });
       await newFont.load();
-      fontSet.add(newFont);
-
-      if (newFont.status !== "loaded" || !document.fonts.check(`16px "${source.family}"`)) {
-        fontSet.delete(newFont);
+      if (newFont.status !== "loaded") {
         throw new Error(`Iconfine could not load ${source.family}`);
       }
+      fontSet.add(newFont);
 
       const previous = this.loadedFonts.get(packId);
       if (previous) fontSet.delete(previous);
@@ -444,7 +442,12 @@ export default class IconfinePlugin extends Plugin {
   }
 
   async installRendererSnippet(): Promise<boolean> {
-    await this.reloadScreenFonts();
+    try {
+      await this.reloadScreenFonts();
+    } catch (error) {
+      console.error("Iconfine failed to load screen fonts", error);
+      new Notice("Iconfine could not load screen fonts");
+    }
 
     if (!this.manifest.dir) {
       throw new Error("Iconfine plugin directory is unavailable");
