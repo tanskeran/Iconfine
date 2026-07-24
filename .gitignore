@@ -1,0 +1,8 @@
+node_modules/
+release/
+highlightr-plugin/
+chat-export-*.md
+font-test.html
+font-test*.png
+test-server.mjs
+*.log
