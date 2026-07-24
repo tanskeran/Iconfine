@@ -1,6 +1,7 @@
 import {
   App,
   Editor,
+  FuzzySuggestModal,
   Modal,
   Notice,
   Plugin,
@@ -243,7 +244,7 @@ class IconPickerModal extends Modal {
   }
 }
 
-class IconPackListModal extends Modal {
+class IconPackSuggestModal extends FuzzySuggestModal<IconPack> {
   private readonly currentPack: IconPackId;
   private readonly onChoose: (packId: IconPackId) => Promise<void>;
 
@@ -255,30 +256,20 @@ class IconPackListModal extends Modal {
     super(app);
     this.currentPack = currentPack;
     this.onChoose = onChoose;
+    this.setPlaceholder("Search icon packs...");
   }
 
-  onOpen(): void {
-    this.setTitle("Choose icon pack");
-
-    for (const pack of Object.values(ICON_PACKS)) {
-      const selected = pack.id === this.currentPack;
-      new Setting(this.contentEl)
-        .setName(pack.name)
-        .setDesc(`${pack.icons.length} icons · ${pack.fontFile}`)
-        .addButton((button) => {
-          button
-            .setButtonText(selected ? "Selected" : "Select")
-            .setDisabled(selected)
-            .onClick(async () => {
-              await this.onChoose(pack.id);
-              this.close();
-            });
-        });
-    }
+  getItems(): IconPack[] {
+    return Object.values(ICON_PACKS);
   }
 
-  onClose(): void {
-    this.contentEl.empty();
+  getItemText(pack: IconPack): string {
+    const selected = pack.id === this.currentPack ? " · Selected" : "";
+    return `${pack.name} · ${pack.icons.length} icons${selected}`;
+  }
+
+  onChooseItem(pack: IconPack): void {
+    void this.onChoose(pack.id);
   }
 }
 
@@ -302,7 +293,7 @@ class IconfineSettingTab extends PluginSettingTab {
           .setIcon("list")
           .setTooltip("Choose icon pack")
           .onClick(() => {
-            new IconPackListModal(
+            new IconPackSuggestModal(
               this.app,
               this.plugin.settings.defaultPack,
               async (packId) => {
@@ -331,14 +322,27 @@ class IconfineSettingTab extends PluginSettingTab {
       new Setting(this.containerEl)
         .setName(pack.name)
         .setDesc(`${pack.icons.length} icon IDs · ${pack.fontFile}`)
-        .addButton((button) => button.setButtonText("Loaded").setDisabled(true));
+        .addButton((button) => {
+          button.setButtonText("Reload").onClick(async () => {
+            button.setDisabled(true).setButtonText("Reloading...");
+            try {
+              await this.plugin.reloadIconFont(pack.id);
+              new Notice(`${pack.name} reloaded`);
+            } catch (error) {
+              console.error(`Iconfine failed to reload ${pack.name}`, error);
+              new Notice(`Failed to reload ${pack.name}`);
+            } finally {
+              button.setDisabled(false).setButtonText("Reload");
+            }
+          });
+        });
     }
   }
 }
 
 export default class IconfinePlugin extends Plugin {
   settings: IconfineSettings = DEFAULT_SETTINGS;
-  private loadedFonts: FontFace[] = [];
+  private loadedFonts = new Map<IconPackId, FontFace>();
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -357,35 +361,43 @@ export default class IconfinePlugin extends Plugin {
 
   onunload(): void {
     const fontSet = document.fonts as MutableFontFaceSet;
-    for (const font of this.loadedFonts) {
+    for (const font of this.loadedFonts.values()) {
       fontSet.delete(font);
     }
-    this.loadedFonts = [];
+    this.loadedFonts.clear();
   }
 
   private async loadIconFonts(): Promise<void> {
+    for (const pack of Object.values(ICON_PACKS)) {
+      await this.reloadIconFont(pack.id);
+    }
+  }
+
+  async reloadIconFont(packId: IconPackId): Promise<void> {
     if (!this.manifest.dir) {
       throw new Error("Iconfine plugin directory is unavailable");
     }
 
-    for (const pack of Object.values(ICON_PACKS)) {
-      const fontPath = normalizePath(`${this.manifest.dir}/${pack.fontFile}`);
-      const fontData = await this.app.vault.adapter.readBinary(fontPath);
-      const font = new FontFace(pack.fontFamily, fontData, {
-        style: "normal",
-        weight: "400",
-      });
+    const pack = ICON_PACKS[packId];
+    const fontPath = normalizePath(`${this.manifest.dir}/${pack.fontFile}`);
+    const fontData = await this.app.vault.adapter.readBinary(fontPath);
+    const newFont = new FontFace(pack.fontFamily, fontData, {
+      style: "normal",
+      weight: "400",
+    });
 
-      await font.load();
-      (document.fonts as MutableFontFaceSet).add(font);
+    await newFont.load();
+    const fontSet = document.fonts as MutableFontFaceSet;
+    fontSet.add(newFont);
 
-      if (!document.fonts.check(`16px "${pack.fontFamily}"`)) {
-        (document.fonts as MutableFontFaceSet).delete(font);
-        throw new Error(`Iconfine could not register ${pack.name} from ${fontPath}`);
-      }
-
-      this.loadedFonts.push(font);
+    if (newFont.status !== "loaded" || !document.fonts.check(`16px "${pack.fontFamily}"`)) {
+      fontSet.delete(newFont);
+      throw new Error(`Iconfine could not register ${pack.name} from ${fontPath}`);
     }
+
+    const previousFont = this.loadedFonts.get(packId);
+    if (previousFont) fontSet.delete(previousFont);
+    this.loadedFonts.set(packId, newFont);
   }
 
   private async loadSettings(): Promise<void> {
