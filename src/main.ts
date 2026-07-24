@@ -15,10 +15,15 @@ import {
 } from "./icons.generated";
 
 type IconPackId = "lucide" | "tabler";
+type SpacePlacement = "before" | "after" | "both";
 
 interface IconfineSettings {
   defaultPack: IconPackId;
-  insertTrailingSpace: boolean;
+  spacePlacement: SpacePlacement;
+}
+
+interface LegacyIconfineSettings extends Partial<IconfineSettings> {
+  insertTrailingSpace?: boolean;
 }
 
 interface MutableFontFaceSet extends FontFaceSet {
@@ -53,7 +58,7 @@ const ICON_PACKS: Record<IconPackId, IconPack> = {
 
 const DEFAULT_SETTINGS: IconfineSettings = {
   defaultPack: "lucide",
-  insertTrailingSpace: true,
+  spacePlacement: "after",
 };
 
 const RESULT_LIMIT = 50;
@@ -235,8 +240,9 @@ class IconPickerModal extends Modal {
   }
 
   private insertIcon(icon: IconDefinition): void {
-    const suffix = this.settings.insertTrailingSpace ? " " : "";
-    const html = `<i class="iconfine if-${this.activePack.id} if-icon-${icon.id}"></i>${suffix}`;
+    const prefix = this.settings.spacePlacement === "before" || this.settings.spacePlacement === "both" ? " " : "";
+    const suffix = this.settings.spacePlacement === "after" || this.settings.spacePlacement === "both" ? " " : "";
+    const html = `${prefix}<i class="iconfine if-${this.activePack.id} if-icon-${icon.id}"></i>${suffix}`;
     this.editor.replaceSelection(html);
     this.close();
     this.editor.focus();
@@ -269,41 +275,41 @@ class IconfineSettingTab extends PluginSettingTab {
             this.plugin.settings.defaultPack = packId;
             await this.plugin.saveSettings(false);
             this.display();
-            new Notice(`Default icon pack: ${ICON_PACKS[packId].name}`);
           });
       });
 
     new Setting(this.containerEl)
-      .setName("Insert trailing space")
-      .setDesc("Add one space after inserted icon HTML.")
-      .addToggle((toggle) =>
-        toggle
-          .setValue(this.plugin.settings.insertTrailingSpace)
+      .setName("Insert space in...")
+      .setDesc("Choose where one space is inserted around icon HTML.")
+      .addDropdown((dropdown) => {
+        dropdown
+          .addOption("before", "只加前面")
+          .addOption("after", "只加后面")
+          .addOption("both", "前后都加一空格")
+          .setValue(this.plugin.settings.spacePlacement)
           .onChange(async (value) => {
-            this.plugin.settings.insertTrailingSpace = value;
-            await this.plugin.saveSettings();
-          }),
-      );
-
-    for (const pack of Object.values(ICON_PACKS)) {
-      new Setting(this.containerEl)
-        .setName(pack.name)
-        .setDesc(`${pack.icons.length} icon IDs · ${pack.fontFile}`)
-        .addButton((button) => {
-          button.setButtonText("Reload").onClick(async () => {
-            button.setDisabled(true).setButtonText("Reloading...");
-            try {
-              await this.plugin.reloadIconFont(pack.id);
-              new Notice(`${pack.name} reloaded`);
-            } catch (error) {
-              console.error(`Iconfine failed to reload ${pack.name}`, error);
-              new Notice(`Failed to reload ${pack.name}`);
-            } finally {
-              button.setDisabled(false).setButtonText("Reload");
-            }
+            this.plugin.settings.spacePlacement = value as SpacePlacement;
+            await this.plugin.saveSettings(false);
           });
+      });
+
+    new Setting(this.containerEl)
+      .setName("Icon fonts")
+      .setDesc(`${LUCIDE_ICONS.length} Lucide · ${TABLER_ICONS.length} Tabler Icons`)
+      .addButton((button) => {
+        button.setButtonText("Reload").onClick(async () => {
+          button.setDisabled(true).setButtonText("Reloading...");
+          try {
+            await this.plugin.reloadAllIconFonts();
+            new Notice("Icon fonts reloaded");
+          } catch (error) {
+            console.error("Iconfine failed to reload icon fonts", error);
+            new Notice("Failed to reload icon fonts");
+          } finally {
+            button.setDisabled(false).setButtonText("Reload");
+          }
         });
-    }
+      });
   }
 }
 
@@ -335,6 +341,10 @@ export default class IconfinePlugin extends Plugin {
   }
 
   private async loadIconFonts(): Promise<void> {
+    await this.reloadAllIconFonts();
+  }
+
+  async reloadAllIconFonts(): Promise<void> {
     for (const pack of Object.values(ICON_PACKS)) {
       await this.reloadIconFont(pack.id);
     }
@@ -368,12 +378,15 @@ export default class IconfinePlugin extends Plugin {
   }
 
   private async loadSettings(): Promise<void> {
-    const saved = await this.loadData() as Partial<IconfineSettings> | null;
-    this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
+    const saved = await this.loadData() as LegacyIconfineSettings | null;
+    const defaultPack = saved?.defaultPack && ICON_PACKS[saved.defaultPack]
+      ? saved.defaultPack
+      : DEFAULT_SETTINGS.defaultPack;
+    const spacePlacement = saved?.spacePlacement && ["before", "after", "both"].includes(saved.spacePlacement)
+      ? saved.spacePlacement
+      : DEFAULT_SETTINGS.spacePlacement;
 
-    if (!ICON_PACKS[this.settings.defaultPack]) {
-      this.settings.defaultPack = DEFAULT_SETTINGS.defaultPack;
-    }
+    this.settings = { defaultPack, spacePlacement };
   }
 
   async saveSettings(showNotice = true): Promise<void> {
