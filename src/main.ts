@@ -26,16 +26,19 @@ interface LegacyIconfineSettings extends Partial<IconfineSettings> {
   insertTrailingSpace?: boolean;
 }
 
-interface MutableFontFaceSet extends FontFaceSet {
-  add(font: FontFace): MutableFontFaceSet;
-  delete(font: FontFace): boolean;
+interface CssSnippetManager {
+  enabledSnippets?: Set<string>;
+  requestLoadSnippets?: () => Promise<void> | void;
+  setCssEnabledStatus?: (snippet: string, enabled: boolean) => Promise<void> | void;
+}
+
+interface AppWithCssSnippets extends App {
+  customCss?: CssSnippetManager;
 }
 
 interface IconPack {
   id: IconPackId;
   name: string;
-  fontFamily: string;
-  fontFile: string;
   icons: IconDefinition[];
 }
 
@@ -43,15 +46,11 @@ const ICON_PACKS: Record<IconPackId, IconPack> = {
   lucide: {
     id: "lucide",
     name: "Lucide",
-    fontFamily: "Iconfine Lucide",
-    fontFile: "lucide.woff2",
     icons: LUCIDE_ICONS,
   },
   tabler: {
     id: "tabler",
     name: "Tabler Icons",
-    fontFamily: "Iconfine Tabler",
-    fontFile: "tabler-icons.woff2",
     icons: TABLER_ICONS,
   },
 };
@@ -294,17 +293,20 @@ class IconfineSettingTab extends PluginSettingTab {
       });
 
     new Setting(this.containerEl)
-      .setName("Icon fonts")
-      .setDesc(`${LUCIDE_ICONS.length} Lucide · ${TABLER_ICONS.length} Tabler Icons`)
+      .setName("Renderer snippet")
+      .setDesc(`${this.plugin.isRendererEnabled() ? "Enabled" : "Needs enabling"} · ${LUCIDE_ICONS.length} Lucide · ${TABLER_ICONS.length} Tabler Icons`)
       .addButton((button) => {
         button.setButtonText("Reload").onClick(async () => {
           button.setDisabled(true).setButtonText("Reloading...");
           try {
-            await this.plugin.reloadAllIconFonts();
-            new Notice("Icon fonts reloaded");
+            const enabled = await this.plugin.installRendererSnippet();
+            new Notice(enabled
+              ? "Iconfine renderer reloaded"
+              : "Enable Iconfine in Appearance → CSS snippets");
+            this.display();
           } catch (error) {
-            console.error("Iconfine failed to reload icon fonts", error);
-            new Notice("Failed to reload icon fonts");
+            console.error("Iconfine failed to reload its renderer snippet", error);
+            new Notice("Failed to reload Iconfine renderer");
           } finally {
             button.setDisabled(false).setButtonText("Reload");
           }
@@ -315,11 +317,18 @@ class IconfineSettingTab extends PluginSettingTab {
 
 export default class IconfinePlugin extends Plugin {
   settings: IconfineSettings = DEFAULT_SETTINGS;
-  private loadedFonts = new Map<IconPackId, FontFace>();
 
   async onload(): Promise<void> {
     await this.loadSettings();
-    await this.loadIconFonts();
+    try {
+      const enabled = await this.installRendererSnippet();
+      if (!enabled) {
+        new Notice("Enable Iconfine in Appearance → CSS snippets");
+      }
+    } catch (error) {
+      console.error("Iconfine failed to install its renderer snippet", error);
+      new Notice("Iconfine could not install its renderer snippet");
+    }
 
     this.addCommand({
       id: "insert-icon",
@@ -347,49 +356,45 @@ export default class IconfinePlugin extends Plugin {
     new IconPickerModal(this.app, editor, this.settings).open();
   }
 
-  onunload(): void {
-    const fontSet = document.fonts as MutableFontFaceSet;
-    for (const font of this.loadedFonts.values()) {
-      fontSet.delete(font);
-    }
-    this.loadedFonts.clear();
+  isRendererEnabled(): boolean {
+    return (this.app as AppWithCssSnippets).customCss?.enabledSnippets?.has("iconfine") ?? false;
   }
 
-  private async loadIconFonts(): Promise<void> {
-    await this.reloadAllIconFonts();
-  }
-
-  async reloadAllIconFonts(): Promise<void> {
-    for (const pack of Object.values(ICON_PACKS)) {
-      await this.reloadIconFont(pack.id);
-    }
-  }
-
-  async reloadIconFont(packId: IconPackId): Promise<void> {
+  async installRendererSnippet(): Promise<boolean> {
     if (!this.manifest.dir) {
       throw new Error("Iconfine plugin directory is unavailable");
     }
 
-    const pack = ICON_PACKS[packId];
-    const fontPath = normalizePath(`${this.manifest.dir}/${pack.fontFile}`);
-    const fontData = await this.app.vault.adapter.readBinary(fontPath);
-    const newFont = new FontFace(pack.fontFamily, fontData, {
-      style: "normal",
-      weight: "400",
-    });
-
-    await newFont.load();
-    const fontSet = document.fonts as MutableFontFaceSet;
-    fontSet.add(newFont);
-
-    if (newFont.status !== "loaded" || !document.fonts.check(`16px "${pack.fontFamily}"`)) {
-      fontSet.delete(newFont);
-      throw new Error(`Iconfine could not register ${pack.name} from ${fontPath}`);
+    const adapter = this.app.vault.adapter;
+    const snippetsDir = normalizePath(`${this.app.vault.configDir}/snippets`);
+    if (!await adapter.exists(snippetsDir)) {
+      await adapter.mkdir(snippetsDir);
     }
 
-    const previousFont = this.loadedFonts.get(packId);
-    if (previousFont) fontSet.delete(previousFont);
-    this.loadedFonts.set(packId, newFont);
+    const resources = [
+      ["iconfine.css", "iconfine.css"],
+      ["lucide.woff2", "iconfine-lucide.woff2"],
+      ["tabler-icons.woff2", "iconfine-tabler.woff2"],
+    ] as const;
+
+    for (const [sourceName, targetName] of resources) {
+      const sourcePath = normalizePath(`${this.manifest.dir}/${sourceName}`);
+      const targetPath = normalizePath(`${snippetsDir}/${targetName}`);
+      if (sourceName.endsWith(".css")) {
+        await adapter.write(targetPath, await adapter.read(sourcePath));
+      } else {
+        await adapter.writeBinary(targetPath, await adapter.readBinary(sourcePath));
+      }
+    }
+
+    const customCss = (this.app as AppWithCssSnippets).customCss;
+    await customCss?.requestLoadSnippets?.();
+    if (customCss?.setCssEnabledStatus) {
+      await customCss.setCssEnabledStatus("iconfine", true);
+      await customCss.requestLoadSnippets?.();
+    }
+
+    return this.isRendererEnabled();
   }
 
   private async loadSettings(): Promise<void> {

@@ -1,26 +1,3 @@
-.iconfine {
-  display: inline-block;
-  color: inherit;
-  font-style: normal;
-  font-weight: normal;
-  font-size: inherit;
-  line-height: 1;
-  vertical-align: -0.125em;
-  text-rendering: auto;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-.iconfine.if-lucide,
-.iconfine.if-lucide::before {
-  font-family: "Iconfine Lucide" !important;
-}
-
-.iconfine.if-tabler,
-.iconfine.if-tabler::before {
-  font-family: "Iconfine Tabler" !important;
-}
-
 .iconfine-modal {
   width: min(720px, calc(100vw - 32px));
 }

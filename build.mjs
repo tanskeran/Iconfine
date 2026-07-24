@@ -23,8 +23,6 @@ function parseMappings(css, pattern, packName) {
 
 const lucideCss = await readFile("lucide.css", "utf8");
 const tablerCss = await readFile("tabler-icon/tabler-icons.css", "utf8");
-const lucideFontData = (await readFile("lucide.woff2")).toString("base64");
-const tablerFontData = (await readFile("tabler-icon/tabler-icons.woff2")).toString("base64");
 
 const lucideIcons = parseMappings(
   lucideCss,
@@ -41,40 +39,17 @@ const generatedTs = `export interface IconDefinition {\n  id: string;\n  codepoi
 await writeFile("src/icons.generated.ts", generatedTs, "utf8");
 
 const baseCss = await readFile("src/styles-base.css", "utf8");
-const printFontCss = `@font-face {
-  font-family: "Iconfine Lucide Print";
-  src: url("data:font/woff2;base64,${lucideFontData}") format("woff2");
-  font-style: normal;
-  font-weight: 400;
-}
-
-@font-face {
-  font-family: "Iconfine Tabler Print";
-  src: url("data:font/woff2;base64,${tablerFontData}") format("woff2");
-  font-style: normal;
-  font-weight: 400;
-}
-
-@media print {
-  .iconfine.if-lucide,
-  .iconfine.if-lucide::before {
-    font-family: "Iconfine Lucide Print" !important;
-  }
-
-  .iconfine.if-tabler,
-  .iconfine.if-tabler::before {
-    font-family: "Iconfine Tabler Print" !important;
-  }
-}`;
+const rendererBaseCss = await readFile("src/renderer-base.css", "utf8");
 const lucideMappings = lucideIcons
   .map(({ id, codepoint }) => `.iconfine.if-lucide.if-icon-${id}::before { content: "\\${codepoint}"; }`)
   .join("\n");
 const tablerMappings = tablerIcons
   .map(({ id, codepoint }) => `.iconfine.if-tabler.if-icon-${id}::before { content: "\\${codepoint}"; }`)
   .join("\n");
+await writeFile("styles.css", `${baseCss.trim()}\n`, "utf8");
 await writeFile(
-  "styles.css",
-  `${printFontCss}\n\n${baseCss.trim()}\n\n${lucideMappings}\n\n${tablerMappings}\n`,
+  "iconfine.css",
+  `${rendererBaseCss.trim()}\n\n${lucideMappings}\n\n${tablerMappings}\n`,
   "utf8",
 );
 await copyFile("tabler-icon/tabler-icons.woff2", "tabler-icons.woff2");

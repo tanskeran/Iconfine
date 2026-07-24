@@ -1,0 +1,51 @@
+@font-face {
+  font-family: "Iconfine Lucide";
+  src: url("iconfine-lucide.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+@font-face {
+  font-family: "Iconfine Tabler";
+  src: url("iconfine-tabler.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+}
+
+.iconfine {
+  display: inline-block;
+  color: inherit !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+  font-size: inherit;
+  line-height: 1;
+  vertical-align: -0.125em;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.iconfine.if-lucide,
+.iconfine.if-lucide::before {
+  font-family: "Iconfine Lucide" !important;
+}
+
+.iconfine.if-tabler,
+.iconfine.if-tabler::before {
+  font-family: "Iconfine Tabler" !important;
+}
+
+.iconfine::before {
+  color: inherit !important;
+}
+
+@media print {
+  .iconfine,
+  .iconfine::before {
+    color: inherit !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
