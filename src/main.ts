@@ -376,6 +376,7 @@ export default class IconfinePlugin extends Plugin {
     this.addCommand({
       id: "insert-icon",
       name: "Insert icon",
+      icon: "shapes",
       editorCallback: (editor) => {
         this.openIconPicker(editor);
       },
