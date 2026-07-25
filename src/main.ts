@@ -382,13 +382,16 @@ export default class IconfinePlugin extends Plugin {
       },
     });
 
+    this.addCommand({
+      id: "open-icon-picker-mobile",
+      name: "Open icon picker",
+      icon: "shapes",
+      mobileOnly: true,
+      callback: () => this.openPickerForActiveNote(),
+    });
+
     this.addRibbonIcon("shapes", "Iconfine", () => {
-      const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-      if (!view) {
-        new Notice("Open a Markdown note to insert an icon");
-        return;
-      }
-      this.openIconPicker(view.editor);
+      this.openPickerForActiveNote();
     });
 
     this.registerEvent(
@@ -407,6 +410,15 @@ export default class IconfinePlugin extends Plugin {
 
   private openIconPicker(editor: Editor): void {
     new IconPickerModal(this.app, editor, this).open();
+  }
+
+  private openPickerForActiveNote(): void {
+    const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+    if (!view) {
+      new Notice("Open a Markdown note to insert an icon");
+      return;
+    }
+    this.openIconPicker(view.editor);
   }
 
   onunload(): void {
