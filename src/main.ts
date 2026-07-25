@@ -1,6 +1,7 @@
 import {
   App,
   Editor,
+  MarkdownView,
   Modal,
   Notice,
   Plugin,
@@ -378,6 +379,15 @@ export default class IconfinePlugin extends Plugin {
       editorCallback: (editor) => {
         this.openIconPicker(editor);
       },
+    });
+
+    this.addRibbonIcon("shapes", "Iconfine", () => {
+      const view = this.app.workspace.getActiveViewOfType(MarkdownView);
+      if (!view) {
+        new Notice("Open a Markdown note to insert an icon");
+        return;
+      }
+      this.openIconPicker(view.editor);
     });
 
     this.registerEvent(
