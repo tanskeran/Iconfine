@@ -13,9 +13,10 @@ import {
   IconDefinition,
   LUCIDE_ICONS,
   TABLER_ICONS,
+  TABLER_FILLED_ICONS,
 } from "./icons.generated";
 
-type IconPackId = "lucide" | "tabler";
+type IconPackId = "lucide" | "tabler" | "tabler-filled";
 type SpacePlacement = "before" | "after" | "both";
 
 interface IconfineSettings {
@@ -60,6 +61,11 @@ const ICON_PACKS: Record<IconPackId, IconPack> = {
     name: "Tabler Icons",
     icons: TABLER_ICONS,
   },
+  "tabler-filled": {
+    id: "tabler-filled",
+    name: "Tabler Icons Filled",
+    icons: TABLER_FILLED_ICONS,
+  },
 };
 
 const DEFAULT_SETTINGS: IconfineSettings = {
@@ -68,6 +74,7 @@ const DEFAULT_SETTINGS: IconfineSettings = {
   recentIcons: {
     lucide: [],
     tabler: [],
+    "tabler-filled": [],
   },
 };
 
@@ -90,9 +97,9 @@ function normalizeIconId(input: string): string {
 }
 
 function getIconClasses(packId: IconPackId, iconId: string): string {
-  return packId === "lucide"
-    ? `iconfine lucide-font icon-${iconId}`
-    : `iconfine tabler-font ti-${iconId}`;
+  if (packId === "lucide") return `iconfine lucide-font icon-${iconId}`;
+  if (packId === "tabler") return `iconfine tabler-font ti-${iconId}`;
+  return `iconfine tabler-filled-font ti-filled-${iconId}`;
 }
 
 function searchIcons(pack: IconPack, query: string, recentIds: string[] = []): IconDefinition[] {
@@ -336,7 +343,7 @@ class IconfineSettingTab extends PluginSettingTab {
 
     new Setting(this.containerEl)
       .setName("Renderer snippet")
-      .setDesc(`${this.plugin.isRendererEnabled() ? "Enabled" : "Needs enabling"} · ${LUCIDE_ICONS.length} Lucide · ${TABLER_ICONS.length} Tabler Icons`)
+      .setDesc(`${this.plugin.isRendererEnabled() ? "Enabled" : "Needs enabling"} · ${LUCIDE_ICONS.length} Lucide · ${TABLER_ICONS.length} Tabler · ${TABLER_FILLED_ICONS.length} Filled`)
       .addButton((button) => {
         button.setButtonText("Reload").onClick(async () => {
           button.setDisabled(true).setButtonText("Reloading...");
@@ -437,6 +444,7 @@ export default class IconfinePlugin extends Plugin {
     const sources: Record<IconPackId, { family: string; file: string }> = {
       lucide: { family: "Iconfine Lucide", file: "lucide.woff2" },
       tabler: { family: "Iconfine Tabler", file: "tabler-icons.woff2" },
+      "tabler-filled": { family: "Iconfine Tabler Filled", file: "tabler-icons-filled.woff2" },
     };
     const fontSet = document.fonts as MutableFontFaceSet;
 
@@ -486,6 +494,7 @@ export default class IconfinePlugin extends Plugin {
       ["iconfine.css", "iconfine.css"],
       ["lucide.woff2", "iconfine-lucide.woff2"],
       ["tabler-icons.woff2", "iconfine-tabler.woff2"],
+      ["tabler-icons-filled.woff2", "iconfine-tabler-filled.woff2"],
     ] as const;
 
     for (const [sourceName, targetName] of resources) {
@@ -529,6 +538,9 @@ export default class IconfinePlugin extends Plugin {
     const recentIcons = {
       lucide: Array.isArray(saved?.recentIcons?.lucide) ? saved.recentIcons.lucide : [],
       tabler: Array.isArray(saved?.recentIcons?.tabler) ? saved.recentIcons.tabler : [],
+      "tabler-filled": Array.isArray(saved?.recentIcons?.["tabler-filled"])
+        ? saved.recentIcons["tabler-filled"]
+        : [],
     };
     this.settings = { defaultPack, spacePlacement, recentIcons };
   }

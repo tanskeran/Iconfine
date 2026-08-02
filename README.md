@@ -4,7 +4,7 @@ Iconfine manages an Obsidian CSS snippet for static icon-font rendering, and pro
 
 ## Initial feature set
 
-- Managed `iconfine` CSS snippet with Lucide and Tabler fonts
+- Managed `iconfine` CSS snippet with Lucide, Tabler, and Tabler Icons Filled fonts
 - Choose the default icon pack from settings
 - Switch icon packs directly in the icon picker
 - Search and preview up to 50 matching icons
@@ -35,11 +35,13 @@ Copy these files into `<vault>/.obsidian/plugins/iconfine/`:
 - `iconfine.css`
 - `lucide.woff2`
 - `tabler-icons.woff2`
+- `tabler-icons-filled.woff2`
 
 Enable Iconfine in Obsidian. It installs and enables these managed resources:
 
 - `<vault>/.obsidian/snippets/iconfine.css`
 - `<vault>/.obsidian/snippets/iconfine-lucide.woff2`
 - `<vault>/.obsidian/snippets/iconfine-tabler.woff2`
+- `<vault>/.obsidian/snippets/iconfine-tabler-filled.woff2`
 
 If the current Obsidian version does not expose its snippet manager, enable `Iconfine` once under **Appearance → CSS snippets**. Then run `Iconfine: Insert icon` from the command palette or use the editor context menu.

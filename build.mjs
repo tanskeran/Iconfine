@@ -23,6 +23,7 @@ function parseMappings(css, pattern, packName) {
 
 const lucideCss = await readFile("lucide.css", "utf8");
 const tablerCss = await readFile("tabler-icon/tabler-icons.css", "utf8");
+const tablerFilledCss = await readFile("tabler-icon/tabler-icons-filled.css", "utf8");
 
 const lucideIcons = parseMappings(
   lucideCss,
@@ -35,28 +36,40 @@ const tablerIcons = parseMappings(
   "Tabler",
 );
 
-const generatedTs = `export interface IconDefinition {\n  id: string;\n  codepoint: string;\n}\n\nexport const LUCIDE_ICONS: IconDefinition[] = ${JSON.stringify(lucideIcons, null, 2)};\n\nexport const TABLER_ICONS: IconDefinition[] = ${JSON.stringify(tablerIcons, null, 2)};\n`;
+const tablerFilledIcons = parseMappings(
+  tablerFilledCss,
+  /\.ti-([a-z0-9-]+):before\s*\{\s*content:\s*"\\([a-f0-9]+)";\s*\}/gi,
+  "Tabler Filled",
+);
+
+const generatedTs = `export interface IconDefinition {\n  id: string;\n  codepoint: string;\n}\n\nexport const LUCIDE_ICONS: IconDefinition[] = ${JSON.stringify(lucideIcons, null, 2)};\n\nexport const TABLER_ICONS: IconDefinition[] = ${JSON.stringify(tablerIcons, null, 2)};\n\nexport const TABLER_FILLED_ICONS: IconDefinition[] = ${JSON.stringify(tablerFilledIcons, null, 2)};\n`;
 await writeFile("src/icons.generated.ts", generatedTs, "utf8");
 
 const baseCss = await readFile("src/styles-base.css", "utf8");
 const lucideFontData = (await readFile("lucide.woff2")).toString("base64");
 const tablerFontData = (await readFile("tabler-icon/tabler-icons.woff2")).toString("base64");
+const tablerFilledFontData = (await readFile("tabler-icon/tabler-icons-filled.woff2")).toString("base64");
 const rendererBaseCss = (await readFile("src/renderer-base.css", "utf8"))
   .replace('url("iconfine-lucide.woff2")', `url("data:font/woff2;base64,${lucideFontData}")`)
-  .replace('url("iconfine-tabler.woff2")', `url("data:font/woff2;base64,${tablerFontData}")`);
+  .replace('url("iconfine-tabler.woff2")', `url("data:font/woff2;base64,${tablerFontData}")`)
+  .replace('url("iconfine-tabler-filled.woff2")', `url("data:font/woff2;base64,${tablerFilledFontData}")`);
 const lucideMappings = lucideIcons
   .map(({ id, codepoint }) => `.iconfine.lucide-font.icon-${id}::before, .iconfine.if-lucide.if-icon-${id}::before { content: "\\${codepoint}"; }`)
   .join("\n");
 const tablerMappings = tablerIcons
   .map(({ id, codepoint }) => `.iconfine.tabler-font.ti-${id}::before, .iconfine.if-tabler.if-icon-${id}::before { content: "\\${codepoint}"; }`)
   .join("\n");
+const tablerFilledMappings = tablerFilledIcons
+  .map(({ id, codepoint }) => `.iconfine.tabler-filled-font.ti-filled-${id}::before { content: "\\${codepoint}"; }`)
+  .join("\n");
 await writeFile("styles.css", `${baseCss.trim()}\n`, "utf8");
 await writeFile(
   "iconfine.css",
-  `${rendererBaseCss.trim()}\n\n${lucideMappings}\n\n${tablerMappings}\n`,
+  `${rendererBaseCss.trim()}\n\n${lucideMappings}\n\n${tablerMappings}\n\n${tablerFilledMappings}\n`,
   "utf8",
 );
 await copyFile("tabler-icon/tabler-icons.woff2", "tabler-icons.woff2");
+await copyFile("tabler-icon/tabler-icons-filled.woff2", "tabler-icons-filled.woff2");
 
 const context = await esbuild.context({
   entryPoints: ["src/main.ts"],
@@ -72,9 +85,9 @@ const context = await esbuild.context({
 
 if (watch) {
   await context.watch();
-  console.log(`Iconfine: watching ${lucideIcons.length} Lucide and ${tablerIcons.length} Tabler icons`);
+  console.log(`Iconfine: watching ${lucideIcons.length} Lucide, ${tablerIcons.length} Tabler, and ${tablerFilledIcons.length} Filled icons`);
 } else {
   await context.rebuild();
   await context.dispose();
-  console.log(`Iconfine: built ${lucideIcons.length} Lucide and ${tablerIcons.length} Tabler icons`);
+  console.log(`Iconfine: built ${lucideIcons.length} Lucide, ${tablerIcons.length} Tabler, and ${tablerFilledIcons.length} Filled icons`);
 }
