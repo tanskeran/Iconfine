@@ -376,8 +376,7 @@ export default class IconfinePlugin extends Plugin {
         new Notice("Enable Iconfine in Appearance → CSS snippets");
       }
     } catch (error) {
-      console.error("Iconfine failed to install its renderer snippet", error);
-      new Notice("Iconfine could not install its renderer snippet");
+      console.error("Iconfine failed to check its renderer snippet", error);
     }
 
     this.addCommand({

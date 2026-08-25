@@ -33205,8 +33205,7 @@ var IconfinePlugin = class extends import_obsidian.Plugin {
         new import_obsidian.Notice("Enable Iconfine in Appearance \u2192 CSS snippets");
       }
     } catch (error) {
-      console.error("Iconfine failed to install its renderer snippet", error);
-      new import_obsidian.Notice("Iconfine could not install its renderer snippet");
+      console.error("Iconfine failed to check its renderer snippet", error);
     }
     this.addCommand({
       id: "insert-icon",
