@@ -20,14 +20,11 @@ Inserted markup:
 <i class="iconfine if-tabler if-icon-book"></i>
 ```
 
-## Build
+## Install
 
-```powershell
-npm.cmd install
-npm.cmd run build
-```
+Download `iconfine-1.0.0.zip` from the latest [Release](../../releases) and unzip it into `<vault>/.obsidian/plugins/` — the zip contains a ready-made `iconfine/` folder. (Or copy the whole `dist/iconfine/` folder from the repo into `<vault>/.obsidian/plugins/` and rename it if needed.)
 
-Copy these files into `<vault>/.obsidian/plugins/iconfine/`:
+The plugin folder must contain:
 
 - `main.js`
 - `manifest.json`
@@ -37,11 +34,26 @@ Copy these files into `<vault>/.obsidian/plugins/iconfine/`:
 - `tabler-icons.woff2`
 - `tabler-icons-filled.woff2`
 
-Enable Iconfine in Obsidian. It installs and enables these managed resources:
+## Build
+
+```powershell
+npm.cmd install
+npm.cmd run build
+```
+
+The build reads icon-font sources from `vendor/` and writes the finished plugin folder to `dist/iconfine/`. Iconfine installs and enables these managed resources:
 
 - `<vault>/.obsidian/snippets/iconfine.css`
 - `<vault>/.obsidian/snippets/iconfine-lucide.woff2`
 - `<vault>/.obsidian/snippets/iconfine-tabler.woff2`
 - `<vault>/.obsidian/snippets/iconfine-tabler-filled.woff2`
 
-If the current Obsidian version does not expose its snippet manager, enable `Iconfine` once under **Appearance → CSS snippets**. Then run `Iconfine: Insert icon` from the command palette or use the editor context menu.
+Enable Iconfine in Obsidian. If the current Obsidian version does not expose its snippet manager, enable `Iconfine` once under **Appearance → CSS snippets**. Then run `Iconfine: Insert icon` from the command palette or use the editor context menu.
+
+## Repository layout
+
+```
+src/            plugin TypeScript source
+vendor/         upstream icon fonts & CSS (build inputs, not for install)
+dist/iconfine/  built plugin folder — this is what you install
+```
