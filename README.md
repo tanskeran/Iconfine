@@ -2,6 +2,11 @@
 
 Iconfine manages an Obsidian CSS snippet for static icon-font rendering, and provides searchable insertion shortcuts. The snippet keeps icons available in reading view, Live Preview, and Obsidian's native PDF export.
 
+## ⚠️ IMPORTANT
+- If you have installed through obsidian, then go to the [release page](https://github.com/tanskeran/Iconfine/releases/tag/1.0.0) and download:
+1. `iconfine.css` into <vault>/.obsidian/snippets/ and enable it.
+2. Three `woff2` into <vault>/.obsidian/plugins/ and reload the plugin.
+
 ## Initial feature set
 
 - Managed `iconfine` CSS snippet with Lucide, Tabler, and Tabler Icons Filled fonts
