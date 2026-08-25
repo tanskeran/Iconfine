@@ -71,6 +71,7 @@ await writeFile(
   "utf8",
 );
 await copyFile("vendor/lucide.woff2", `${OUT}/lucide.woff2`);
+await copyFile("manifest.json", `${OUT}/manifest.json`);
 await copyFile("vendor/tabler-icon/tabler-icons.woff2", `${OUT}/tabler-icons.woff2`);
 await copyFile("vendor/tabler-icon/tabler-icons-filled.woff2", `${OUT}/tabler-icons-filled.woff2`);
 

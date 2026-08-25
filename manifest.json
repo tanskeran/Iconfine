@@ -1,0 +1,9 @@
+{
+  "id": "iconfine",
+  "name": "Iconfine",
+  "version": "1.0.0",
+  "minAppVersion": "1.5.0",
+  "description": "Search and insert static font icons that inherit text color and export cleanly to PDF.",
+  "author": "raymo",
+  "isDesktopOnly": false
+}
