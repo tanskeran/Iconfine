@@ -15,8 +15,6 @@ import {
   TABLER_ICONS,
   TABLER_FILLED_ICONS,
 } from "./icons.generated";
-import { ICONFINE_FONT_DATA_URLS, ICONFINE_SNIPPET_BASE_CSS } from "./embedded.generated";
-import { buildIconfineSnippetCss } from "./snippet-css";
 
 type IconPackId = "lucide" | "tabler" | "tabler-filled";
 type SpacePlacement = "before" | "after" | "both";
@@ -81,13 +79,6 @@ const DEFAULT_SETTINGS: IconfineSettings = {
 };
 
 const RESULT_LIMIT = 50;
-
-/** Families registered through the FontFace API, fed by the embedded fonts. */
-const SCREEN_FONT_FAMILIES: Record<IconPackId, string> = {
-  lucide: "Iconfine Lucide",
-  tabler: "Iconfine Tabler",
-  "tabler-filled": "Iconfine Tabler Filled",
-};
 
 function normalizeIconId(input: string): string {
   return input
@@ -376,7 +367,6 @@ class IconfineSettingTab extends PluginSettingTab {
 export default class IconfinePlugin extends Plugin {
   settings: IconfineSettings = DEFAULT_SETTINGS;
   private loadedFonts = new Map<IconPackId, FontFace>();
-  private snippetCss: string | null = null;
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -447,17 +437,28 @@ export default class IconfinePlugin extends Plugin {
   }
 
   private async reloadScreenFonts(): Promise<void> {
+    if (!this.manifest.dir) {
+      throw new Error("Iconfine plugin directory is unavailable");
+    }
+
+    const sources: Record<IconPackId, { family: string; file: string }> = {
+      lucide: { family: "Iconfine Lucide", file: "lucide.woff2" },
+      tabler: { family: "Iconfine Tabler", file: "tabler-icons.woff2" },
+      "tabler-filled": { family: "Iconfine Tabler Filled", file: "tabler-icons-filled.woff2" },
+    };
     const fontSet = document.fonts as MutableFontFaceSet;
 
-    for (const packId of Object.keys(SCREEN_FONT_FAMILIES) as IconPackId[]) {
-      const family = SCREEN_FONT_FAMILIES[packId];
-      const newFont = new FontFace(family, `url("${ICONFINE_FONT_DATA_URLS[packId]}")`, {
+    for (const packId of Object.keys(sources) as IconPackId[]) {
+      const source = sources[packId];
+      const fontPath = normalizePath(`${this.manifest.dir}/${source.file}`);
+      const fontData = await this.app.vault.adapter.readBinary(fontPath);
+      const newFont = new FontFace(source.family, fontData, {
         style: "normal",
         weight: "400",
       });
       await newFont.load();
       if (newFont.status !== "loaded") {
-        throw new Error(`Iconfine could not load ${family}`);
+        throw new Error(`Iconfine could not load ${source.family}`);
       }
       fontSet.add(newFont);
 
@@ -471,21 +472,6 @@ export default class IconfinePlugin extends Plugin {
     return (this.app as AppWithCssSnippets).customCss?.enabledSnippets?.has("iconfine") ?? false;
   }
 
-  private getSnippetCss(): string {
-    if (!this.snippetCss) {
-      this.snippetCss = buildIconfineSnippetCss({
-        baseCss: ICONFINE_SNIPPET_BASE_CSS,
-        fontDataUrls: ICONFINE_FONT_DATA_URLS,
-        packs: {
-          lucide: LUCIDE_ICONS,
-          tabler: TABLER_ICONS,
-          "tabler-filled": TABLER_FILLED_ICONS,
-        },
-      });
-    }
-    return this.snippetCss;
-  }
-
   async installRendererSnippet(): Promise<boolean> {
     try {
       await this.reloadScreenFonts();
@@ -494,18 +480,31 @@ export default class IconfinePlugin extends Plugin {
       new Notice("Iconfine could not load screen fonts");
     }
 
+    if (!this.manifest.dir) {
+      throw new Error("Iconfine plugin directory is unavailable");
+    }
+
     const adapter = this.app.vault.adapter;
     const snippetsDir = normalizePath(`${this.app.vault.configDir}/snippets`);
     if (!await adapter.exists(snippetsDir)) {
       await adapter.mkdir(snippetsDir);
     }
 
-    const targetPath = normalizePath(`${snippetsDir}/iconfine.css`);
-    const nextCss = this.getSnippetCss();
-    if (!await adapter.exists(targetPath)) {
-      await adapter.write(targetPath, nextCss);
-    } else if (await adapter.read(targetPath) !== nextCss) {
-      await adapter.write(targetPath, nextCss);
+    const resources = [
+      ["iconfine.css", "iconfine.css"],
+      ["lucide.woff2", "iconfine-lucide.woff2"],
+      ["tabler-icons.woff2", "iconfine-tabler.woff2"],
+      ["tabler-icons-filled.woff2", "iconfine-tabler-filled.woff2"],
+    ] as const;
+
+    for (const [sourceName, targetName] of resources) {
+      const sourcePath = normalizePath(`${this.manifest.dir}/${sourceName}`);
+      const targetPath = normalizePath(`${snippetsDir}/${targetName}`);
+      if (sourceName.endsWith(".css")) {
+        await adapter.write(targetPath, await adapter.read(sourcePath));
+      } else {
+        await adapter.writeBinary(targetPath, await adapter.readBinary(sourcePath));
+      }
     }
 
     const customCss = (this.app as AppWithCssSnippets).customCss;
