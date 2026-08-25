@@ -33286,42 +33286,20 @@ var IconfinePlugin = class extends import_obsidian.Plugin {
     return (_c = (_b = (_a = this.app.customCss) == null ? void 0 : _a.enabledSnippets) == null ? void 0 : _b.has("iconfine")) != null ? _c : false;
   }
   async installRendererSnippet() {
-    var _a, _b;
+    var _a;
     try {
       await this.reloadScreenFonts();
     } catch (error) {
       console.error("Iconfine failed to load screen fonts", error);
       new import_obsidian.Notice("Iconfine could not load screen fonts");
     }
-    if (!this.manifest.dir) {
-      throw new Error("Iconfine plugin directory is unavailable");
-    }
     const adapter = this.app.vault.adapter;
-    const snippetsDir = (0, import_obsidian.normalizePath)(`${this.app.vault.configDir}/snippets`);
-    if (!await adapter.exists(snippetsDir)) {
-      await adapter.mkdir(snippetsDir);
-    }
-    const resources = [
-      ["iconfine.css", "iconfine.css"],
-      ["lucide.woff2", "iconfine-lucide.woff2"],
-      ["tabler-icons.woff2", "iconfine-tabler.woff2"],
-      ["tabler-icons-filled.woff2", "iconfine-tabler-filled.woff2"]
-    ];
-    for (const [sourceName, targetName] of resources) {
-      const sourcePath = (0, import_obsidian.normalizePath)(`${this.manifest.dir}/${sourceName}`);
-      const targetPath = (0, import_obsidian.normalizePath)(`${snippetsDir}/${targetName}`);
-      if (sourceName.endsWith(".css")) {
-        await adapter.write(targetPath, await adapter.read(sourcePath));
-      } else {
-        await adapter.writeBinary(targetPath, await adapter.readBinary(sourcePath));
-      }
+    const snippetPath = (0, import_obsidian.normalizePath)(`${this.app.vault.configDir}/snippets/iconfine.css`);
+    if (!await adapter.exists(snippetPath)) {
+      return false;
     }
     const customCss = this.app.customCss;
     await ((_a = customCss == null ? void 0 : customCss.requestLoadSnippets) == null ? void 0 : _a.call(customCss));
-    if (customCss == null ? void 0 : customCss.setCssEnabledStatus) {
-      await customCss.setCssEnabledStatus("iconfine", true);
-      await ((_b = customCss.requestLoadSnippets) == null ? void 0 : _b.call(customCss));
-    }
     return this.isRendererEnabled();
   }
   async recordRecentIcon(packId, iconId) {

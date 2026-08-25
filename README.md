@@ -48,13 +48,7 @@ npm.cmd install
 npm.cmd run build
 ```
 
-The build reads icon-font sources from `vendor/` and writes the finished plugin folder to `dist/iconfine/`. Iconfine installs and enables these managed resources:
-
-- `<vault>/.obsidian/snippets/iconfine.css`
-- `<vault>/.obsidian/snippets/iconfine-lucide.woff2`
-- `<vault>/.obsidian/snippets/iconfine-tabler.woff2`
-- `<vault>/.obsidian/snippets/iconfine-tabler-filled.woff2`
-
+The build reads icon-font sources from `vendor/` and writes the finished plugin folder to `dist/iconfine/`. After installing through Obsidian, download `iconfine.css` into the vault's `snippets/` folder and enable it. The three `.woff2` files belong in the plugin folder so Iconfine can load the screen fonts.
 Enable Iconfine in Obsidian. If the current Obsidian version does not expose its snippet manager, enable `Iconfine` once under **Appearance → CSS snippets**. Then run `Iconfine: Insert icon` from the command palette or use the editor context menu.
 
 ## Repository layout

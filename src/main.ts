@@ -480,40 +480,14 @@ export default class IconfinePlugin extends Plugin {
       new Notice("Iconfine could not load screen fonts");
     }
 
-    if (!this.manifest.dir) {
-      throw new Error("Iconfine plugin directory is unavailable");
-    }
-
     const adapter = this.app.vault.adapter;
-    const snippetsDir = normalizePath(`${this.app.vault.configDir}/snippets`);
-    if (!await adapter.exists(snippetsDir)) {
-      await adapter.mkdir(snippetsDir);
-    }
-
-    const resources = [
-      ["iconfine.css", "iconfine.css"],
-      ["lucide.woff2", "iconfine-lucide.woff2"],
-      ["tabler-icons.woff2", "iconfine-tabler.woff2"],
-      ["tabler-icons-filled.woff2", "iconfine-tabler-filled.woff2"],
-    ] as const;
-
-    for (const [sourceName, targetName] of resources) {
-      const sourcePath = normalizePath(`${this.manifest.dir}/${sourceName}`);
-      const targetPath = normalizePath(`${snippetsDir}/${targetName}`);
-      if (sourceName.endsWith(".css")) {
-        await adapter.write(targetPath, await adapter.read(sourcePath));
-      } else {
-        await adapter.writeBinary(targetPath, await adapter.readBinary(sourcePath));
-      }
+    const snippetPath = normalizePath(`${this.app.vault.configDir}/snippets/iconfine.css`);
+    if (!await adapter.exists(snippetPath)) {
+      return false;
     }
 
     const customCss = (this.app as AppWithCssSnippets).customCss;
     await customCss?.requestLoadSnippets?.();
-    if (customCss?.setCssEnabledStatus) {
-      await customCss.setCssEnabledStatus("iconfine", true);
-      await customCss.requestLoadSnippets?.();
-    }
-
     return this.isRendererEnabled();
   }
 
