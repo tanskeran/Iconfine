@@ -7,6 +7,7 @@ import {
   Plugin,
   PluginSettingTab,
   Setting,
+  SettingDefinitionItem,
 } from "obsidian";
 import {
   IconDefinition,
@@ -282,6 +283,22 @@ class IconPickerModal extends Modal {
   }
 }
 
+const SPACE_PLACEMENT_OPTIONS: Record<SpacePlacement, string> = {
+  before: "Before icon",
+  after: "After icon",
+  both: "Before and after",
+};
+
+function getPackOptions(): Record<IconPackId, string> {
+  const options = {} as Record<IconPackId, string>;
+  for (const pack of Object.values(ICON_PACKS)) {
+    options[pack.id] = pack.name;
+  }
+  return options;
+}
+
+const SPACE_PLACEMENT_DESC = "Choose where one space is inserted around icon HTML.";
+
 class IconfineSettingTab extends PluginSettingTab {
   private readonly plugin: IconfinePlugin;
 
@@ -290,6 +307,52 @@ class IconfineSettingTab extends PluginSettingTab {
     this.plugin = plugin;
   }
 
+  /** Declarative settings (Obsidian 1.13.0+); also makes them searchable. */
+  getSettingDefinitions(): SettingDefinitionItem[] {
+    return [
+      {
+        name: "Default icon pack",
+        desc: `${LUCIDE_ICONS.length} Lucide · ${TABLER_ICONS.length} Tabler · ${TABLER_FILLED_ICONS.length} Tabler Filled icons`,
+        aliases: ["icon pack", "lucide", "tabler"],
+        control: {
+          type: "dropdown",
+          key: "defaultPack",
+          options: getPackOptions(),
+          defaultValue: DEFAULT_SETTINGS.defaultPack,
+        },
+      },
+      {
+        name: "Insert space in...",
+        desc: SPACE_PLACEMENT_DESC,
+        aliases: ["space", "spacing"],
+        control: {
+          type: "dropdown",
+          key: "spacePlacement",
+          options: SPACE_PLACEMENT_OPTIONS,
+          defaultValue: DEFAULT_SETTINGS.spacePlacement,
+        },
+      },
+    ];
+  }
+
+  getControlValue(key: string): unknown {
+    if (key === "defaultPack") return this.plugin.settings.defaultPack;
+    if (key === "spacePlacement") return this.plugin.settings.spacePlacement;
+    return undefined;
+  }
+
+  async setControlValue(key: string, value: unknown): Promise<void> {
+    if (key === "defaultPack" && typeof value === "string" && value in ICON_PACKS) {
+      this.plugin.settings.defaultPack = value as IconPackId;
+    } else if (key === "spacePlacement" && typeof value === "string" && value in SPACE_PLACEMENT_OPTIONS) {
+      this.plugin.settings.spacePlacement = value as SpacePlacement;
+    } else {
+      return;
+    }
+    await this.plugin.saveSettings(false);
+  }
+
+  /** Fallback for Obsidian versions older than 1.13.0. */
   display(): void {
     this.containerEl.empty();
     const currentPack = ICON_PACKS[this.plugin.settings.defaultPack];
@@ -298,31 +361,24 @@ class IconfineSettingTab extends PluginSettingTab {
       .setName("Default icon pack")
       .setDesc(`${currentPack.icons.length} icons available`)
       .addDropdown((dropdown) => {
-        for (const pack of Object.values(ICON_PACKS)) {
-          dropdown.addOption(pack.id, pack.name);
-        }
         dropdown
+          .addOptions(getPackOptions())
           .setValue(this.plugin.settings.defaultPack)
           .onChange(async (value) => {
-            const packId = value as IconPackId;
-            this.plugin.settings.defaultPack = packId;
-            await this.plugin.saveSettings(false);
+            await this.setControlValue("defaultPack", value);
             this.display();
           });
       });
 
     new Setting(this.containerEl)
       .setName("Insert space in...")
-      .setDesc("Choose where one space is inserted around icon HTML.")
+      .setDesc(SPACE_PLACEMENT_DESC)
       .addDropdown((dropdown) => {
         dropdown
-          .addOption("before", "Before icon")
-          .addOption("after", "After icon")
-          .addOption("both", "Before and after")
+          .addOptions(SPACE_PLACEMENT_OPTIONS)
           .setValue(this.plugin.settings.spacePlacement)
           .onChange(async (value) => {
-            this.plugin.settings.spacePlacement = value as SpacePlacement;
-            await this.plugin.saveSettings(false);
+            await this.setControlValue("spacePlacement", value);
           });
       });
   }
