@@ -33149,29 +33149,79 @@ var IconPickerModal = class extends import_obsidian.Modal {
     this.editor.focus();
   }
 };
+var SPACE_PLACEMENT_OPTIONS = {
+  before: "Before icon",
+  after: "After icon",
+  both: "Before and after"
+};
+function getPackOptions() {
+  const options = {};
+  for (const pack of Object.values(ICON_PACKS)) {
+    options[pack.id] = pack.name;
+  }
+  return options;
+}
+var SPACE_PLACEMENT_DESC = "Choose where one space is inserted around icon HTML.";
 var IconfineSettingTab = class extends import_obsidian.PluginSettingTab {
   constructor(app, plugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
+  /** Declarative settings (Obsidian 1.13.0+); also makes them searchable. */
+  getSettingDefinitions() {
+    return [
+      {
+        name: "Default icon pack",
+        desc: `${LUCIDE_ICONS.length} Lucide \xB7 ${TABLER_ICONS.length} Tabler \xB7 ${TABLER_FILLED_ICONS.length} Tabler Filled icons`,
+        aliases: ["icon pack", "lucide", "tabler"],
+        control: {
+          type: "dropdown",
+          key: "defaultPack",
+          options: getPackOptions(),
+          defaultValue: DEFAULT_SETTINGS.defaultPack
+        }
+      },
+      {
+        name: "Insert space in...",
+        desc: SPACE_PLACEMENT_DESC,
+        aliases: ["space", "spacing"],
+        control: {
+          type: "dropdown",
+          key: "spacePlacement",
+          options: SPACE_PLACEMENT_OPTIONS,
+          defaultValue: DEFAULT_SETTINGS.spacePlacement
+        }
+      }
+    ];
+  }
+  getControlValue(key) {
+    if (key === "defaultPack") return this.plugin.settings.defaultPack;
+    if (key === "spacePlacement") return this.plugin.settings.spacePlacement;
+    return void 0;
+  }
+  async setControlValue(key, value) {
+    if (key === "defaultPack" && typeof value === "string" && value in ICON_PACKS) {
+      this.plugin.settings.defaultPack = value;
+    } else if (key === "spacePlacement" && typeof value === "string" && value in SPACE_PLACEMENT_OPTIONS) {
+      this.plugin.settings.spacePlacement = value;
+    } else {
+      return;
+    }
+    await this.plugin.saveSettings(false);
+  }
+  /** Fallback for Obsidian versions older than 1.13.0. */
   display() {
     this.containerEl.empty();
     const currentPack = ICON_PACKS[this.plugin.settings.defaultPack];
     new import_obsidian.Setting(this.containerEl).setName("Default icon pack").setDesc(`${currentPack.icons.length} icons available`).addDropdown((dropdown) => {
-      for (const pack of Object.values(ICON_PACKS)) {
-        dropdown.addOption(pack.id, pack.name);
-      }
-      dropdown.setValue(this.plugin.settings.defaultPack).onChange(async (value) => {
-        const packId = value;
-        this.plugin.settings.defaultPack = packId;
-        await this.plugin.saveSettings(false);
+      dropdown.addOptions(getPackOptions()).setValue(this.plugin.settings.defaultPack).onChange(async (value) => {
+        await this.setControlValue("defaultPack", value);
         this.display();
       });
     });
-    new import_obsidian.Setting(this.containerEl).setName("Insert space in...").setDesc("Choose where one space is inserted around icon HTML.").addDropdown((dropdown) => {
-      dropdown.addOption("before", "Before icon").addOption("after", "After icon").addOption("both", "Before and after").setValue(this.plugin.settings.spacePlacement).onChange(async (value) => {
-        this.plugin.settings.spacePlacement = value;
-        await this.plugin.saveSettings(false);
+    new import_obsidian.Setting(this.containerEl).setName("Insert space in...").setDesc(SPACE_PLACEMENT_DESC).addDropdown((dropdown) => {
+      dropdown.addOptions(SPACE_PLACEMENT_OPTIONS).setValue(this.plugin.settings.spacePlacement).onChange(async (value) => {
+        await this.setControlValue("spacePlacement", value);
       });
     });
   }
