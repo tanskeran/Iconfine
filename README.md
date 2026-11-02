@@ -2,15 +2,13 @@
 
 English | [简体中文](README.zh-CN.md)
 
-Iconfine inserts static icon-font markup into Obsidian notes through a searchable icon picker. Rendering is done by the `iconfine.css` CSS snippet, which keeps icons available in reading view, Live Preview, and Obsidian's native PDF export.
+Iconfine inserts static icon-font markup into Obsidian notes through a searchable icon picker. The icon fonts are embedded in the plugin's `styles.css`, so icons inherit text color and work in reading view, Live Preview, and Obsidian's native PDF export. No extra files or CSS snippets are needed.
 
-## ⚠️ IMPORTANT
-
-Iconfine needs its renderer snippet. Download `iconfine.css` from the [latest release](https://github.com/tanskeran/Iconfine/releases/latest), put it in `<vault>/.obsidian/snippets/`, and enable it under **Appearance → CSS snippets**. The snippet embeds all icon fonts, so nothing else needs to be downloaded.
+> **Upgrading from 1.0.0?** The `iconfine.css` snippet and the `.woff2` files are no longer needed. You can disable and delete `<vault>/.obsidian/snippets/iconfine.css` and remove the `.woff2` files from the plugin folder.
 
 ## Initial feature set
 
-- `iconfine.css` renderer snippet with Lucide, Tabler, and Tabler Icons Filled fonts
+- Lucide, Tabler, and Tabler Icons Filled icon fonts, bundled in `styles.css`
 - Choose the default icon pack from settings
 - Switch icon packs directly in the icon picker
 - Search and preview up to 50 matching icons
@@ -31,15 +29,11 @@ The older `if-lucide if-icon-*` / `if-tabler if-icon-*` markup is still rendered
 
 ## Install
 
-Download `iconfine-<version>.zip` from the latest [Release](../../releases) and unzip it into `<vault>/.obsidian/plugins/` — the zip contains a ready-made `iconfine/` folder. (Or copy the whole `dist/iconfine/` folder from the repo into `<vault>/.obsidian/plugins/` and rename it if needed.)
+Install Iconfine from Obsidian's community plugins, or install it manually: download `main.js`, `manifest.json`, and `styles.css` from the latest [Release](../../releases) into `<vault>/.obsidian/plugins/iconfine/` (or copy the repo's `dist/iconfine/` folder into `<vault>/.obsidian/plugins/`).
 
-The plugin folder must contain:
+## Usage
 
-- `main.js`
-- `manifest.json`
-- `styles.css`
-
-Then move `iconfine.css` into `<vault>/.obsidian/snippets/` and enable it.
+Enable Iconfine in Obsidian, then run `Iconfine: Insert icon` from the command palette, use the editor context menu, or click the ribbon icon.
 
 ## Build
 
@@ -51,10 +45,7 @@ npm run typecheck
 
 (On Windows PowerShell, use `npm.cmd` if script execution blocks `npm`.)
 
-The build reads icon-font sources from `vendor/` and writes the finished plugin folder to `dist/iconfine/`. It also writes `dist/iconfine/iconfine.css`; copy that file into `<vault>/.obsidian/snippets/` and enable it.
-## Usage
-
-Enable Iconfine in Obsidian, then run `Iconfine: Insert icon` from the command palette, use the editor context menu, or click the ribbon icon.
+The build reads icon-font sources from `vendor/` and writes the finished plugin folder to `dist/iconfine/`.
 
 ## Repository layout
 

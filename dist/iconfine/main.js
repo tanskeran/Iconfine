@@ -33174,21 +33174,6 @@ var IconfineSettingTab = class extends import_obsidian.PluginSettingTab {
         await this.plugin.saveSettings(false);
       });
     });
-    new import_obsidian.Setting(this.containerEl).setName("Renderer snippet").setDesc(`${this.plugin.isRendererEnabled() ? "Enabled" : "Needs enabling"} \xB7 ${LUCIDE_ICONS.length} Lucide \xB7 ${TABLER_ICONS.length} Tabler \xB7 ${TABLER_FILLED_ICONS.length} Filled`).addButton((button) => {
-      button.setButtonText("Reload").onClick(async () => {
-        button.setDisabled(true).setButtonText("Reloading...");
-        try {
-          const enabled = await this.plugin.installRendererSnippet();
-          new import_obsidian.Notice(enabled ? "Iconfine renderer reloaded" : "Enable Iconfine in Appearance \u2192 CSS snippets");
-          this.display();
-        } catch (error) {
-          console.error("Iconfine failed to reload its renderer snippet", error);
-          new import_obsidian.Notice("Failed to reload Iconfine renderer");
-        } finally {
-          button.setDisabled(false).setButtonText("Reload");
-        }
-      });
-    });
   }
 };
 var IconfinePlugin = class extends import_obsidian.Plugin {
@@ -33198,14 +33183,6 @@ var IconfinePlugin = class extends import_obsidian.Plugin {
   }
   async onload() {
     await this.loadSettings();
-    try {
-      const enabled = await this.installRendererSnippet();
-      if (!enabled) {
-        new import_obsidian.Notice("Enable Iconfine in Appearance \u2192 CSS snippets");
-      }
-    } catch (error) {
-      console.error("Iconfine failed to check its renderer snippet", error);
-    }
     this.addCommand({
       id: "insert-icon",
       name: "Insert icon",
@@ -33243,20 +33220,6 @@ var IconfinePlugin = class extends import_obsidian.Plugin {
       return;
     }
     this.openIconPicker(view.editor);
-  }
-  isRendererEnabled() {
-    var _a, _b, _c;
-    return (_c = (_b = (_a = this.app.customCss) == null ? void 0 : _a.enabledSnippets) == null ? void 0 : _b.has("iconfine")) != null ? _c : false;
-  }
-  async installRendererSnippet() {
-    var _a;
-    const snippetPath = (0, import_obsidian.normalizePath)(`${this.app.vault.configDir}/snippets/iconfine.css`);
-    if (!await this.app.vault.adapter.exists(snippetPath)) {
-      return false;
-    }
-    const customCss = this.app.customCss;
-    await ((_a = customCss == null ? void 0 : customCss.requestLoadSnippets) == null ? void 0 : _a.call(customCss));
-    return this.isRendererEnabled();
   }
   async recordRecentIcon(packId, iconId) {
     var _a;
