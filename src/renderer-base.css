@@ -36,16 +36,12 @@
 }
 
 .iconfine.lucide-font,
-.iconfine.lucide-font::before,
-.iconfine.if-lucide,
-.iconfine.if-lucide::before {
+.iconfine.lucide-font::before {
   font-family: "Iconfine Lucide Print" !important;
 }
 
 .iconfine.tabler-font,
-.iconfine.tabler-font::before,
-.iconfine.if-tabler,
-.iconfine.if-tabler::before {
+.iconfine.tabler-font::before {
   font-family: "Iconfine Tabler Print" !important;
 }
 

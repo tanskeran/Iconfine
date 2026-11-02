@@ -32981,7 +32981,7 @@ var DEFAULT_SETTINGS = {
 };
 var RESULT_LIMIT = 50;
 function normalizeIconId(input) {
-  return input.trim().replace(/^:+|:+$/g, "").replace(/^if-icon-/i, "").replace(/^icon-/i, "").replace(/^ti-filled-/i, "").replace(/^ti-/i, "").replace(/^Li(?=[A-Z])/, "").replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2").replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/[^a-zA-Z0-9-]/g, "").toLowerCase();
+  return input.trim().replace(/^:+|:+$/g, "").replace(/^icon-/i, "").replace(/^ti-filled-/i, "").replace(/^ti-/i, "").replace(/^Li(?=[A-Z])/, "").replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2").replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/[^a-zA-Z0-9-]/g, "").toLowerCase();
 }
 function getIconClasses(packId, iconId) {
   if (packId === "lucide") return `iconfine lucide-font icon-${iconId}`;

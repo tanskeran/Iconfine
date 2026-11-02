@@ -25,8 +25,6 @@ Inserted markup:
 <i class="iconfine tabler-filled-font ti-filled-star"></i>
 ```
 
-The older `if-lucide if-icon-*` / `if-tabler if-icon-*` markup is still rendered for backward compatibility.
-
 ## Install
 
 Install Iconfine from Obsidian's community plugins, or install it manually: download `main.js`, `manifest.json`, and `styles.css` from the latest [Release](../../releases) into `<vault>/.obsidian/plugins/iconfine/` (or copy the repo's `dist/iconfine/` folder into `<vault>/.obsidian/plugins/`).
