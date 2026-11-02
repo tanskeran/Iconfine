@@ -4,10 +4,7 @@ Iconfine inserts static icon-font markup into Obsidian notes through a searchabl
 
 ## ⚠️ IMPORTANT
 
-If you installed Iconfine through Obsidian, go to the [release page](https://github.com/tanskeran/Iconfine/releases/latest) and download:
-
-1. `iconfine.css` into `<vault>/.obsidian/snippets/`, then enable it.
-2. `lucide.woff2`, `tabler-icons.woff2`, and `tabler-icons-filled.woff2` into `<vault>/.obsidian/plugins/iconfine/`, then reload the plugin.
+Iconfine needs its renderer snippet. Download `iconfine.css` from the [latest release](https://github.com/tanskeran/Iconfine/releases/latest), put it in `<vault>/.obsidian/snippets/`, and enable it under **Appearance → CSS snippets**. The snippet embeds all icon fonts, so nothing else needs to be downloaded.
 
 ## Initial feature set
 
@@ -39,10 +36,8 @@ The plugin folder must contain:
 - `main.js`
 - `manifest.json`
 - `styles.css`
-- `iconfine.css`
-- `lucide.woff2`
-- `tabler-icons.woff2`
-- `tabler-icons-filled.woff2`
+
+Then move `iconfine.css` into `<vault>/.obsidian/snippets/` and enable it.
 
 ## Build
 
@@ -54,7 +49,7 @@ npm run typecheck
 
 (On Windows PowerShell, use `npm.cmd` if script execution blocks `npm`.)
 
-The build reads icon-font sources from `vendor/` and writes the finished plugin folder to `dist/iconfine/`. After installing through Obsidian, download `iconfine.css` into the vault's `snippets/` folder and enable it. The three `.woff2` files belong in the plugin folder so Iconfine can load the screen fonts.
+The build reads icon-font sources from `vendor/` and writes the finished plugin folder to `dist/iconfine/`. It also writes `dist/iconfine/iconfine.css`; copy that file into `<vault>/.obsidian/snippets/` and enable it.
 Enable Iconfine in Obsidian. If the current Obsidian version does not expose its snippet manager, enable `Iconfine` once under **Appearance → CSS snippets**. Then run `Iconfine: Insert icon` from the command palette or use the editor context menu.
 
 ## Repository layout

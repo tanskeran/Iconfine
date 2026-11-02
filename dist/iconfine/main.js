@@ -33195,7 +33195,6 @@ var IconfinePlugin = class extends import_obsidian.Plugin {
   constructor() {
     super(...arguments);
     this.settings = DEFAULT_SETTINGS;
-    this.loadedFonts = /* @__PURE__ */ new Map();
   }
   async onload() {
     await this.loadSettings();
@@ -33245,73 +33244,19 @@ var IconfinePlugin = class extends import_obsidian.Plugin {
     }
     this.openIconPicker(view.editor);
   }
-  onunload() {
-    const fontSet = document.fonts;
-    for (const font of this.loadedFonts.values()) {
-      fontSet.delete(font);
-    }
-    this.loadedFonts.clear();
-  }
-  /** Loads each screen font independently; returns the families that failed. */
-  async reloadScreenFonts() {
-    if (!this.manifest.dir) {
-      throw new Error("Iconfine plugin directory is unavailable");
-    }
-    const sources = {
-      lucide: { family: "Iconfine Lucide", file: "lucide.woff2" },
-      tabler: { family: "Iconfine Tabler", file: "tabler-icons.woff2" },
-      "tabler-filled": { family: "Iconfine Tabler Filled", file: "tabler-icons-filled.woff2" }
-    };
-    const fontSet = document.fonts;
-    const failed = [];
-    for (const packId of Object.keys(sources)) {
-      const source = sources[packId];
-      try {
-        const fontPath = (0, import_obsidian.normalizePath)(`${this.manifest.dir}/${source.file}`);
-        const fontData = await this.app.vault.adapter.readBinary(fontPath);
-        const newFont = new FontFace(source.family, fontData, {
-          style: "normal",
-          weight: "400"
-        });
-        await newFont.load();
-        if (newFont.status !== "loaded") {
-          throw new Error(`Font status: ${newFont.status}`);
-        }
-        fontSet.add(newFont);
-        const previous = this.loadedFonts.get(packId);
-        if (previous) fontSet.delete(previous);
-        this.loadedFonts.set(packId, newFont);
-      } catch (error) {
-        console.warn(`Iconfine could not load ${source.file}`, error);
-        failed.push(source.file);
-      }
-    }
-    return failed;
-  }
   isRendererEnabled() {
     var _a, _b, _c;
     return (_c = (_b = (_a = this.app.customCss) == null ? void 0 : _a.enabledSnippets) == null ? void 0 : _b.has("iconfine")) != null ? _c : false;
   }
   async installRendererSnippet() {
     var _a;
-    let missingFonts = [];
-    try {
-      missingFonts = await this.reloadScreenFonts();
-    } catch (error) {
-      console.error("Iconfine failed to load screen fonts", error);
-    }
-    const adapter = this.app.vault.adapter;
     const snippetPath = (0, import_obsidian.normalizePath)(`${this.app.vault.configDir}/snippets/iconfine.css`);
-    if (!await adapter.exists(snippetPath)) {
+    if (!await this.app.vault.adapter.exists(snippetPath)) {
       return false;
     }
     const customCss = this.app.customCss;
     await ((_a = customCss == null ? void 0 : customCss.requestLoadSnippets) == null ? void 0 : _a.call(customCss));
-    const enabled = this.isRendererEnabled();
-    if (!enabled && missingFonts.length > 0) {
-      new import_obsidian.Notice(`Iconfine is missing: ${missingFonts.join(", ")}`);
-    }
-    return enabled;
+    return this.isRendererEnabled();
   }
   async recordRecentIcon(packId, iconId) {
     var _a;

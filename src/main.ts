@@ -29,11 +29,6 @@ interface LegacyIconfineSettings extends Partial<IconfineSettings> {
   insertTrailingSpace?: boolean;
 }
 
-interface MutableFontFaceSet extends FontFaceSet {
-  add(font: FontFace): MutableFontFaceSet;
-  delete(font: FontFace): boolean;
-}
-
 interface CssSnippetManager {
   enabledSnippets?: Set<string>;
   requestLoadSnippets?: () => Promise<void> | void;
@@ -367,7 +362,6 @@ class IconfineSettingTab extends PluginSettingTab {
 
 export default class IconfinePlugin extends Plugin {
   settings: IconfineSettings = DEFAULT_SETTINGS;
-  private loadedFonts = new Map<IconPackId, FontFace>();
 
   async onload(): Promise<void> {
     await this.loadSettings();
@@ -428,81 +422,19 @@ export default class IconfinePlugin extends Plugin {
     this.openIconPicker(view.editor);
   }
 
-  onunload(): void {
-    const fontSet = document.fonts as MutableFontFaceSet;
-    for (const font of this.loadedFonts.values()) {
-      fontSet.delete(font);
-    }
-    this.loadedFonts.clear();
-  }
-
-  /** Loads each screen font independently; returns the families that failed. */
-  private async reloadScreenFonts(): Promise<string[]> {
-    if (!this.manifest.dir) {
-      throw new Error("Iconfine plugin directory is unavailable");
-    }
-
-    const sources: Record<IconPackId, { family: string; file: string }> = {
-      lucide: { family: "Iconfine Lucide", file: "lucide.woff2" },
-      tabler: { family: "Iconfine Tabler", file: "tabler-icons.woff2" },
-      "tabler-filled": { family: "Iconfine Tabler Filled", file: "tabler-icons-filled.woff2" },
-    };
-    const fontSet = document.fonts as MutableFontFaceSet;
-    const failed: string[] = [];
-
-    for (const packId of Object.keys(sources) as IconPackId[]) {
-      const source = sources[packId];
-      try {
-        const fontPath = normalizePath(`${this.manifest.dir}/${source.file}`);
-        const fontData = await this.app.vault.adapter.readBinary(fontPath);
-        const newFont = new FontFace(source.family, fontData, {
-          style: "normal",
-          weight: "400",
-        });
-        await newFont.load();
-        if (newFont.status !== "loaded") {
-          throw new Error(`Font status: ${newFont.status}`);
-        }
-        fontSet.add(newFont);
-
-        const previous = this.loadedFonts.get(packId);
-        if (previous) fontSet.delete(previous);
-        this.loadedFonts.set(packId, newFont);
-      } catch (error) {
-        console.warn(`Iconfine could not load ${source.file}`, error);
-        failed.push(source.file);
-      }
-    }
-
-    return failed;
-  }
-
   isRendererEnabled(): boolean {
     return (this.app as AppWithCssSnippets).customCss?.enabledSnippets?.has("iconfine") ?? false;
   }
 
   async installRendererSnippet(): Promise<boolean> {
-    let missingFonts: string[] = [];
-    try {
-      missingFonts = await this.reloadScreenFonts();
-    } catch (error) {
-      console.error("Iconfine failed to load screen fonts", error);
-    }
-
-    const adapter = this.app.vault.adapter;
     const snippetPath = normalizePath(`${this.app.vault.configDir}/snippets/iconfine.css`);
-    if (!await adapter.exists(snippetPath)) {
+    if (!await this.app.vault.adapter.exists(snippetPath)) {
       return false;
     }
 
     const customCss = (this.app as AppWithCssSnippets).customCss;
     await customCss?.requestLoadSnippets?.();
-    const enabled = this.isRendererEnabled();
-    // The snippet embeds the same fonts, so missing .woff2 files only matter without it.
-    if (!enabled && missingFonts.length > 0) {
-      new Notice(`Iconfine is missing: ${missingFonts.join(", ")}`);
-    }
-    return enabled;
+    return this.isRendererEnabled();
   }
 
   async recordRecentIcon(packId: IconPackId, iconId: string): Promise<void> {
