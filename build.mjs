@@ -54,10 +54,10 @@ const rendererBaseCss = (await readFile("src/renderer-base.css", "utf8"))
   .replace('url("iconfine-tabler.woff2")', `url("data:font/woff2;base64,${tablerFontData}")`)
   .replace('url("iconfine-tabler-filled.woff2")', `url("data:font/woff2;base64,${tablerFilledFontData}")`);
 const lucideMappings = lucideIcons
-  .map(({ id, codepoint }) => `.iconfine.lucide-font.icon-${id}::before { content: "\\${codepoint}"; }`)
+  .map(({ id, codepoint }) => `.iconfine.lucide-font.icon-${id}::before, .iconfine.if-lucide.if-icon-${id}::before { content: "\\${codepoint}"; }`)
   .join("\n");
 const tablerMappings = tablerIcons
-  .map(({ id, codepoint }) => `.iconfine.tabler-font.ti-${id}::before { content: "\\${codepoint}"; }`)
+  .map(({ id, codepoint }) => `.iconfine.tabler-font.ti-${id}::before, .iconfine.if-tabler.if-icon-${id}::before { content: "\\${codepoint}"; }`)
   .join("\n");
 const tablerFilledMappings = tablerFilledIcons
   .map(({ id, codepoint }) => `.iconfine.tabler-filled-font.ti-filled-${id}::before { content: "\\${codepoint}"; }`)

@@ -25,6 +25,8 @@ Iconfine 是一个 Obsidian 插件：通过可搜索的图标选择器，在笔�
 <i class="iconfine tabler-filled-font ti-filled-star"></i>
 ```
 
+旧版的 `if-lucide if-icon-*` / `if-tabler if-icon-*` 写法仍然可以正常显示。
+
 ## 安装
 
 在 Obsidian 的第三方插件市场中安装 Iconfine；或者手动安装：从最新的 [Release](../../releases) 下载 `main.js`、`manifest.json`、`styles.css`，放到 `<库>/.obsidian/plugins/iconfine/`（也可以直接把仓库里的 `dist/iconfine/` 文件夹复制到 `<库>/.obsidian/plugins/`）。

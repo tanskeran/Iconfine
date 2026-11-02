@@ -69,6 +69,7 @@ function normalizeIconId(input: string): string {
   return input
     .trim()
     .replace(/^:+|:+$/g, "")
+    .replace(/^if-icon-/i, "")
     .replace(/^icon-/i, "")
     .replace(/^ti-filled-/i, "")
     .replace(/^ti-/i, "")
