@@ -86,6 +86,7 @@ function normalizeIconId(input: string): string {
     .replace(/^:+|:+$/g, "")
     .replace(/^if-icon-/i, "")
     .replace(/^icon-/i, "")
+    .replace(/^ti-filled-/i, "")
     .replace(/^ti-/i, "")
     .replace(/^Li(?=[A-Z])/, "")
     .replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2")
@@ -435,7 +436,8 @@ export default class IconfinePlugin extends Plugin {
     this.loadedFonts.clear();
   }
 
-  private async reloadScreenFonts(): Promise<void> {
+  /** Loads each screen font independently; returns the families that failed. */
+  private async reloadScreenFonts(): Promise<string[]> {
     if (!this.manifest.dir) {
       throw new Error("Iconfine plugin directory is unavailable");
     }
@@ -446,25 +448,33 @@ export default class IconfinePlugin extends Plugin {
       "tabler-filled": { family: "Iconfine Tabler Filled", file: "tabler-icons-filled.woff2" },
     };
     const fontSet = document.fonts as MutableFontFaceSet;
+    const failed: string[] = [];
 
     for (const packId of Object.keys(sources) as IconPackId[]) {
       const source = sources[packId];
-      const fontPath = normalizePath(`${this.manifest.dir}/${source.file}`);
-      const fontData = await this.app.vault.adapter.readBinary(fontPath);
-      const newFont = new FontFace(source.family, fontData, {
-        style: "normal",
-        weight: "400",
-      });
-      await newFont.load();
-      if (newFont.status !== "loaded") {
-        throw new Error(`Iconfine could not load ${source.family}`);
-      }
-      fontSet.add(newFont);
+      try {
+        const fontPath = normalizePath(`${this.manifest.dir}/${source.file}`);
+        const fontData = await this.app.vault.adapter.readBinary(fontPath);
+        const newFont = new FontFace(source.family, fontData, {
+          style: "normal",
+          weight: "400",
+        });
+        await newFont.load();
+        if (newFont.status !== "loaded") {
+          throw new Error(`Font status: ${newFont.status}`);
+        }
+        fontSet.add(newFont);
 
-      const previous = this.loadedFonts.get(packId);
-      if (previous) fontSet.delete(previous);
-      this.loadedFonts.set(packId, newFont);
+        const previous = this.loadedFonts.get(packId);
+        if (previous) fontSet.delete(previous);
+        this.loadedFonts.set(packId, newFont);
+      } catch (error) {
+        console.warn(`Iconfine could not load ${source.file}`, error);
+        failed.push(source.file);
+      }
     }
+
+    return failed;
   }
 
   isRendererEnabled(): boolean {
@@ -472,11 +482,11 @@ export default class IconfinePlugin extends Plugin {
   }
 
   async installRendererSnippet(): Promise<boolean> {
+    let missingFonts: string[] = [];
     try {
-      await this.reloadScreenFonts();
+      missingFonts = await this.reloadScreenFonts();
     } catch (error) {
       console.error("Iconfine failed to load screen fonts", error);
-      new Notice("Iconfine could not load screen fonts");
     }
 
     const adapter = this.app.vault.adapter;
@@ -487,7 +497,12 @@ export default class IconfinePlugin extends Plugin {
 
     const customCss = (this.app as AppWithCssSnippets).customCss;
     await customCss?.requestLoadSnippets?.();
-    return this.isRendererEnabled();
+    const enabled = this.isRendererEnabled();
+    // The snippet embeds the same fonts, so missing .woff2 files only matter without it.
+    if (!enabled && missingFonts.length > 0) {
+      new Notice(`Iconfine is missing: ${missingFonts.join(", ")}`);
+    }
+    return enabled;
   }
 
   async recordRecentIcon(packId: IconPackId, iconId: string): Promise<void> {

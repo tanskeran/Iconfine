@@ -32981,7 +32981,7 @@ var DEFAULT_SETTINGS = {
 };
 var RESULT_LIMIT = 50;
 function normalizeIconId(input) {
-  return input.trim().replace(/^:+|:+$/g, "").replace(/^if-icon-/i, "").replace(/^icon-/i, "").replace(/^ti-/i, "").replace(/^Li(?=[A-Z])/, "").replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2").replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/[^a-zA-Z0-9-]/g, "").toLowerCase();
+  return input.trim().replace(/^:+|:+$/g, "").replace(/^if-icon-/i, "").replace(/^icon-/i, "").replace(/^ti-filled-/i, "").replace(/^ti-/i, "").replace(/^Li(?=[A-Z])/, "").replace(/([A-Z]+)([A-Z][a-z])/g, "$1-$2").replace(/([a-z0-9])([A-Z])/g, "$1-$2").replace(/[\s_]+/g, "-").replace(/-+/g, "-").replace(/[^a-zA-Z0-9-]/g, "").toLowerCase();
 }
 function getIconClasses(packId, iconId) {
   if (packId === "lucide") return `iconfine lucide-font icon-${iconId}`;
@@ -33252,6 +33252,7 @@ var IconfinePlugin = class extends import_obsidian.Plugin {
     }
     this.loadedFonts.clear();
   }
+  /** Loads each screen font independently; returns the families that failed. */
   async reloadScreenFonts() {
     if (!this.manifest.dir) {
       throw new Error("Iconfine plugin directory is unavailable");
@@ -33262,23 +33263,30 @@ var IconfinePlugin = class extends import_obsidian.Plugin {
       "tabler-filled": { family: "Iconfine Tabler Filled", file: "tabler-icons-filled.woff2" }
     };
     const fontSet = document.fonts;
+    const failed = [];
     for (const packId of Object.keys(sources)) {
       const source = sources[packId];
-      const fontPath = (0, import_obsidian.normalizePath)(`${this.manifest.dir}/${source.file}`);
-      const fontData = await this.app.vault.adapter.readBinary(fontPath);
-      const newFont = new FontFace(source.family, fontData, {
-        style: "normal",
-        weight: "400"
-      });
-      await newFont.load();
-      if (newFont.status !== "loaded") {
-        throw new Error(`Iconfine could not load ${source.family}`);
+      try {
+        const fontPath = (0, import_obsidian.normalizePath)(`${this.manifest.dir}/${source.file}`);
+        const fontData = await this.app.vault.adapter.readBinary(fontPath);
+        const newFont = new FontFace(source.family, fontData, {
+          style: "normal",
+          weight: "400"
+        });
+        await newFont.load();
+        if (newFont.status !== "loaded") {
+          throw new Error(`Font status: ${newFont.status}`);
+        }
+        fontSet.add(newFont);
+        const previous = this.loadedFonts.get(packId);
+        if (previous) fontSet.delete(previous);
+        this.loadedFonts.set(packId, newFont);
+      } catch (error) {
+        console.warn(`Iconfine could not load ${source.file}`, error);
+        failed.push(source.file);
       }
-      fontSet.add(newFont);
-      const previous = this.loadedFonts.get(packId);
-      if (previous) fontSet.delete(previous);
-      this.loadedFonts.set(packId, newFont);
     }
+    return failed;
   }
   isRendererEnabled() {
     var _a, _b, _c;
@@ -33286,11 +33294,11 @@ var IconfinePlugin = class extends import_obsidian.Plugin {
   }
   async installRendererSnippet() {
     var _a;
+    let missingFonts = [];
     try {
-      await this.reloadScreenFonts();
+      missingFonts = await this.reloadScreenFonts();
     } catch (error) {
       console.error("Iconfine failed to load screen fonts", error);
-      new import_obsidian.Notice("Iconfine could not load screen fonts");
     }
     const adapter = this.app.vault.adapter;
     const snippetPath = (0, import_obsidian.normalizePath)(`${this.app.vault.configDir}/snippets/iconfine.css`);
@@ -33299,7 +33307,11 @@ var IconfinePlugin = class extends import_obsidian.Plugin {
     }
     const customCss = this.app.customCss;
     await ((_a = customCss == null ? void 0 : customCss.requestLoadSnippets) == null ? void 0 : _a.call(customCss));
-    return this.isRendererEnabled();
+    const enabled = this.isRendererEnabled();
+    if (!enabled && missingFonts.length > 0) {
+      new import_obsidian.Notice(`Iconfine is missing: ${missingFonts.join(", ")}`);
+    }
+    return enabled;
   }
   async recordRecentIcon(packId, iconId) {
     var _a;
