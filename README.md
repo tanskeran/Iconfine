@@ -1,5 +1,7 @@
 # Iconfine
 
+English | [简体中文](README.zh-CN.md)
+
 Iconfine inserts static icon-font markup into Obsidian notes through a searchable icon picker. Rendering is done by the `iconfine.css` CSS snippet, which keeps icons available in reading view, Live Preview, and Obsidian's native PDF export.
 
 ## ⚠️ IMPORTANT
@@ -50,7 +52,9 @@ npm run typecheck
 (On Windows PowerShell, use `npm.cmd` if script execution blocks `npm`.)
 
 The build reads icon-font sources from `vendor/` and writes the finished plugin folder to `dist/iconfine/`. It also writes `dist/iconfine/iconfine.css`; copy that file into `<vault>/.obsidian/snippets/` and enable it.
-Enable Iconfine in Obsidian. If the current Obsidian version does not expose its snippet manager, enable `Iconfine` once under **Appearance → CSS snippets**. Then run `Iconfine: Insert icon` from the command palette or use the editor context menu.
+## Usage
+
+Enable Iconfine in Obsidian, then run `Iconfine: Insert icon` from the command palette, use the editor context menu, or click the ribbon icon.
 
 ## Repository layout
 
