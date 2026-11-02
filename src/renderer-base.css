@@ -39,19 +39,19 @@
 .iconfine.lucide-font::before,
 .iconfine.if-lucide,
 .iconfine.if-lucide::before {
-  font-family: "Iconfine Lucide", "Iconfine Lucide Print" !important;
+  font-family: "Iconfine Lucide Print" !important;
 }
 
 .iconfine.tabler-font,
 .iconfine.tabler-font::before,
 .iconfine.if-tabler,
 .iconfine.if-tabler::before {
-  font-family: "Iconfine Tabler", "Iconfine Tabler Print" !important;
+  font-family: "Iconfine Tabler Print" !important;
 }
 
 .iconfine.tabler-filled-font,
 .iconfine.tabler-filled-font::before {
-  font-family: "Iconfine Tabler Filled", "Iconfine Tabler Filled Print" !important;
+  font-family: "Iconfine Tabler Filled Print" !important;
 }
 
 .iconfine::before {

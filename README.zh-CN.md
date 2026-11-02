@@ -2,15 +2,13 @@
 
 [English](README.md) | 简体中文
 
-Iconfine 是一个 Obsidian 插件：通过可搜索的图标选择器，在笔记里插入静态的图标字体标签。图标由 `iconfine.css` 这个 CSS 片段负责渲染，在阅读视图、实时预览和 Obsidian 自带的 PDF 导出中都能正常显示，并且会跟随文字颜色。
+Iconfine 是一个 Obsidian 插件：通过可搜索的图标选择器，在笔记里插入静态的图标字体标签。图标字体已内嵌在插件的 `styles.css` 中，在阅读视图、实时预览和 Obsidian 自带的 PDF 导出中都能正常显示，并且会跟随文字颜色。不需要额外下载文件或启用 CSS 片段。
 
-## ⚠️ 重要
-
-Iconfine 依赖渲染片段。请从[最新 Release](https://github.com/tanskeran/Iconfine/releases/latest) 下载 `iconfine.css`，放到 `<库>/.obsidian/snippets/`，然后在 **设置 → 外观 → CSS 代码片段** 中启用它。片段里已经内嵌了全部图标字体，不需要再下载其他文件。
+> **从 1.0.0 升级？** 不再需要 `iconfine.css` 片段和 `.woff2` 字体文件。可以关闭并删除 `<库>/.obsidian/snippets/iconfine.css`，并删掉插件文件夹里的 `.woff2` 文件。
 
 ## 功能
 
-- `iconfine.css` 渲染片段，包含 Lucide、Tabler、Tabler Icons Filled 三套图标
+- 内置 Lucide、Tabler、Tabler Icons Filled 三套图标字体（打包在 `styles.css` 中）
 - 在设置中选择默认图标包
 - 在图标选择器中直接切换图标包
 - 搜索并预览最多 50 个匹配图标
@@ -31,15 +29,7 @@ Iconfine 依赖渲染片段。请从[最新 Release](https://github.com/tanskera
 
 ## 安装
 
-从最新的 [Release](../../releases) 下载 `iconfine-<版本号>.zip`，解压到 `<库>/.obsidian/plugins/`，压缩包里已经是现成的 `iconfine/` 文件夹。（也可以把仓库里的 `dist/iconfine/` 整个文件夹复制到 `<库>/.obsidian/plugins/`。）
-
-插件文件夹里需要有：
-
-- `main.js`
-- `manifest.json`
-- `styles.css`
-
-然后把 `iconfine.css` 放到 `<库>/.obsidian/snippets/` 并启用。
+在 Obsidian 的第三方插件市场中安装 Iconfine；或者手动安装：从最新的 [Release](../../releases) 下载 `main.js`、`manifest.json`、`styles.css`，放到 `<库>/.obsidian/plugins/iconfine/`（也可以直接把仓库里的 `dist/iconfine/` 文件夹复制到 `<库>/.obsidian/plugins/`）。
 
 ## 使用
 
@@ -55,7 +45,7 @@ npm run typecheck
 
 （Windows PowerShell 如果拦截了 `npm` 脚本，改用 `npm.cmd`。）
 
-构建会读取 `vendor/` 中的图标字体源文件，把完整的插件文件夹输出到 `dist/iconfine/`，同时生成 `dist/iconfine/iconfine.css`。把这个文件复制到 `<库>/.obsidian/snippets/` 并启用即可。
+构建会读取 `vendor/` 中的图标字体源文件，把完整的插件文件夹输出到 `dist/iconfine/`。
 
 ## 仓库结构
 

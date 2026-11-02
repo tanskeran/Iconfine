@@ -64,10 +64,10 @@ const tablerFilledMappings = tablerFilledIcons
   .join("\n");
 const OUT = "dist/iconfine";
 await mkdir(OUT, { recursive: true });
-await writeFile(`${OUT}/styles.css`, `${baseCss.trim()}\n`, "utf8");
+// Everything goes into styles.css: Obsidian's marketplace installs only main.js, manifest.json, and styles.css.
 await writeFile(
-  `${OUT}/iconfine.css`,
-  `${rendererBaseCss.trim()}\n\n${lucideMappings}\n\n${tablerMappings}\n\n${tablerFilledMappings}\n`,
+  `${OUT}/styles.css`,
+  `${baseCss.trim()}\n\n${rendererBaseCss.trim()}\n\n${lucideMappings}\n\n${tablerMappings}\n\n${tablerFilledMappings}\n`,
   "utf8",
 );
 await copyFile("manifest.json", `${OUT}/manifest.json`);

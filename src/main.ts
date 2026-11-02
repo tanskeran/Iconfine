@@ -7,7 +7,6 @@ import {
   Plugin,
   PluginSettingTab,
   Setting,
-  normalizePath,
 } from "obsidian";
 import {
   IconDefinition,
@@ -27,16 +26,6 @@ interface IconfineSettings {
 
 interface LegacyIconfineSettings extends Partial<IconfineSettings> {
   insertTrailingSpace?: boolean;
-}
-
-interface CssSnippetManager {
-  enabledSnippets?: Set<string>;
-  requestLoadSnippets?: () => Promise<void> | void;
-  setCssEnabledStatus?: (snippet: string, enabled: boolean) => Promise<void> | void;
-}
-
-interface AppWithCssSnippets extends App {
-  customCss?: CssSnippetManager;
 }
 
 interface IconPack {
@@ -336,27 +325,6 @@ class IconfineSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings(false);
           });
       });
-
-    new Setting(this.containerEl)
-      .setName("Renderer snippet")
-      .setDesc(`${this.plugin.isRendererEnabled() ? "Enabled" : "Needs enabling"} · ${LUCIDE_ICONS.length} Lucide · ${TABLER_ICONS.length} Tabler · ${TABLER_FILLED_ICONS.length} Filled`)
-      .addButton((button) => {
-        button.setButtonText("Reload").onClick(async () => {
-          button.setDisabled(true).setButtonText("Reloading...");
-          try {
-            const enabled = await this.plugin.installRendererSnippet();
-            new Notice(enabled
-              ? "Iconfine renderer reloaded"
-              : "Enable Iconfine in Appearance → CSS snippets");
-            this.display();
-          } catch (error) {
-            console.error("Iconfine failed to reload its renderer snippet", error);
-            new Notice("Failed to reload Iconfine renderer");
-          } finally {
-            button.setDisabled(false).setButtonText("Reload");
-          }
-        });
-      });
   }
 }
 
@@ -365,15 +333,6 @@ export default class IconfinePlugin extends Plugin {
 
   async onload(): Promise<void> {
     await this.loadSettings();
-    try {
-      const enabled = await this.installRendererSnippet();
-      if (!enabled) {
-        new Notice("Enable Iconfine in Appearance → CSS snippets");
-      }
-    } catch (error) {
-      console.error("Iconfine failed to check its renderer snippet", error);
-    }
-
     this.addCommand({
       id: "insert-icon",
       name: "Insert icon",
@@ -420,21 +379,6 @@ export default class IconfinePlugin extends Plugin {
       return;
     }
     this.openIconPicker(view.editor);
-  }
-
-  isRendererEnabled(): boolean {
-    return (this.app as AppWithCssSnippets).customCss?.enabledSnippets?.has("iconfine") ?? false;
-  }
-
-  async installRendererSnippet(): Promise<boolean> {
-    const snippetPath = normalizePath(`${this.app.vault.configDir}/snippets/iconfine.css`);
-    if (!await this.app.vault.adapter.exists(snippetPath)) {
-      return false;
-    }
-
-    const customCss = (this.app as AppWithCssSnippets).customCss;
-    await customCss?.requestLoadSnippets?.();
-    return this.isRendererEnabled();
   }
 
   async recordRecentIcon(packId: IconPackId, iconId: string): Promise<void> {
